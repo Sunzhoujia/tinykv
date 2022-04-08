@@ -57,6 +57,8 @@ func main() {
 	if err := storage.Start(); err != nil {
 		log.Fatal(err)
 	}
+
+	// storage server
 	server := server.NewServer(storage)
 
 	var alivePolicy = keepalive.EnforcementPolicy{
