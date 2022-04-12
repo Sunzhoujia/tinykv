@@ -173,6 +173,7 @@ func newRaft(c *Config) *Raft {
 	}
 	// Your Code Here (2A).
 
+	// storage存的是已经持久化的hardstate，snapshot，entries
 	raftlog := newLog(c.Storage)
 	hs, _, err := c.Storage.InitialState()
 	if err != nil {
@@ -226,6 +227,7 @@ func (r *Raft) sendHeartbeat(to uint64) {
 	// Your Code Here (2A).
 	commit := min(r.Prs[to].Match, r.RaftLog.committed)
 	m := pb.Message{
+		Term:    r.Term,
 		To:      to,
 		MsgType: pb.MessageType_MsgHeartbeat,
 		Commit:  commit,
@@ -245,7 +247,7 @@ func (r *Raft) tick() {
 
 func (r *Raft) tickElection() {
 	r.electionElapsed++
-
+	// 如果触发electionTimeout，发送MsgHup
 	if r.pastElectionTimeout() {
 		r.electionElapsed = 0
 		if err := r.Step(pb.Message{From: r.id, MsgType: pb.MessageType_MsgHup}); err != nil {
@@ -318,9 +320,8 @@ func (r *Raft) Step(m pb.Message) error {
 	switch {
 	case m.Term == 0:
 		// local message
-
-	// 收到高Term的msg，直接变成Follower
 	case m.Term > r.Term:
+		// 收到高Term的msg，直接变成Follower
 		log.Infof("%x [term: %d] received a %s message with higher term from %x [term: %d]",
 			r.id, r.Term, m.MsgType, m.From, m.Term)
 		if m.MsgType == pb.MessageType_MsgHeartbeat || m.MsgType == pb.MessageType_MsgAppend || m.MsgType == pb.MessageType_MsgSnapshot {
@@ -328,7 +329,6 @@ func (r *Raft) Step(m pb.Message) error {
 		} else {
 			r.becomeFollower(m.Term, None)
 		}
-
 	case m.Term < r.Term:
 		// just ignore
 		return nil
@@ -344,14 +344,14 @@ func (r *Raft) Step(m pb.Message) error {
 			log.Infof("%x [logterm: %d, index: %d, vote: %x] cast %s for %x [logterm: %d, index: %d] at term %d",
 				r.id, r.RaftLog.LastTerm(), r.RaftLog.LastIndex(), r.Vote, m.MsgType, m.From, m.LogTerm, m.Index, r.Term)
 
-			r.send(pb.Message{To: m.From, MsgType: voteRespMsg})
+			r.send(pb.Message{Term: r.Term, To: m.From, MsgType: voteRespMsg})
 			// 重置选举超时，保存给哪个节点投票
 			r.electionElapsed = 0
 			r.Vote = m.From
 		} else {
 			log.Infof("%x [logterm: %d, index: %d, vote: %x] rejected %s for %x [logterm: %d, index: %d] at term %d",
 				r.id, r.RaftLog.LastTerm(), r.RaftLog.LastIndex(), r.Vote, m.MsgType, m.From, m.LogTerm, m.Index, r.Term)
-			r.send(pb.Message{To: m.From, MsgType: voteRespMsg, Reject: true})
+			r.send(pb.Message{Term: r.Term, To: m.From, MsgType: voteRespMsg, Reject: true})
 		}
 	}
 
@@ -426,9 +426,8 @@ func (r *Raft) campaign() {
 	}
 	voteMsg := pb.MessageType_MsgRequestVote
 
-	var term uint64
 	r.becomeCandidate()
-	term = r.Term
+	term := r.Term
 
 	if r.quorum() == r.poll(r.id, voteMsg, true) {
 		r.becomeLeader()
@@ -449,7 +448,10 @@ func (r *Raft) campaign() {
 
 // send msg to its mailBox
 func (r *Raft) send(m pb.Message) {
-	m.From = r.id
+	if m.From == None {
+		m.From = r.id
+	}
+
 	if m.MsgType == pb.MessageType_MsgRequestVote {
 		if m.Term == 0 {
 			// 投票时Term不能为0，涉及到preVote和Vote
@@ -457,9 +459,9 @@ func (r *Raft) send(m pb.Message) {
 		}
 	} else {
 		// 其他的消息类型，term必须为空, 在这里才去填充
-		if m.Term != 0 {
-			panic(fmt.Sprintf("term should not be set when sending %s (was %d)", m.MsgType, m.Term))
-		}
+		// if m.Term != 0 {
+		// 	panic(fmt.Sprintf("term should not be set when sending %s (was %d)", m.MsgType, m.Term))
+		// }
 		m.Term = r.Term
 	}
 	r.msgs = append(r.msgs, m)
@@ -484,7 +486,7 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 func (r *Raft) handleHeartbeat(m pb.Message) {
 	// Your Code Here (2A).
 	r.RaftLog.commitTo(m.Commit)
-	r.send(pb.Message{To: m.From, MsgType: pb.MessageType_MsgHeartbeatResponse})
+	r.send(pb.Message{Term: r.Term, To: m.From, MsgType: pb.MessageType_MsgHeartbeatResponse})
 }
 
 // handleSnapshot handle Snapshot RPC request

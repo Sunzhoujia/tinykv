@@ -135,7 +135,7 @@ The total state machine handling loop will look something like this:
   }
 
 
-  // -----------------
+// 下面是一些关于 membership change
 
 
 To propose changes to the state machine from your node take your application
