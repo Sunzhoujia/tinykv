@@ -1587,7 +1587,7 @@ func newNetworkWithConfig(configFunc func(*Config), peers ...stateMachine) *netw
 			v.id = id
 			npeers[id] = v
 		case *blackHole:
-			npeers[id] = v
+			npeers[id] = v // nil
 		default:
 			panic(fmt.Sprintf("unexpected state machine type: %T", p))
 		}

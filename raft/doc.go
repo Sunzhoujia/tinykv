@@ -65,6 +65,7 @@ First, you must read from the Node.Ready() channel and process the updates
 it contains. These steps may be performed in parallel, except as noted in step
 2.
 
+
 1. Write HardState, Entries, and Snapshot to persistent storage if they are
 not empty. Note that when writing an Entry with Index i, any
 previously-persisted entries with Index >= i must be discarded.
@@ -132,6 +133,10 @@ The total state machine handling loop will look something like this:
       return
     }
   }
+
+
+  // -----------------
+
 
 To propose changes to the state machine from your node take your application
 data, serialize it into a byte slice and call:

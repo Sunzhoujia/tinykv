@@ -52,6 +52,8 @@ const FORMAT_TIME_HOUR string = "2006010215"
 
 var _log *Logger = New()
 
+const DEBUG = false
+
 func init() {
 	SetFlags(Ldate | Ltime | Lshortfile)
 	SetHighlighting(runtime.GOOS != "windows")
@@ -77,7 +79,9 @@ func Info(v ...interface{}) {
 }
 
 func Infof(format string, v ...interface{}) {
-	_log.Infof(format, v...)
+	if DEBUG {
+		_log.Infof(format, v...)
+	}
 }
 
 func Panic(v ...interface{}) {
@@ -85,7 +89,9 @@ func Panic(v ...interface{}) {
 }
 
 func Panicf(format string, v ...interface{}) {
-	_log.Panicf(format, v...)
+	if DEBUG {
+		_log.Panicf(format, v...)
+	}
 }
 
 func Debug(v ...interface{}) {
@@ -93,7 +99,9 @@ func Debug(v ...interface{}) {
 }
 
 func Debugf(format string, v ...interface{}) {
-	_log.Debugf(format, v...)
+	if DEBUG {
+		_log.Debugf(format, v...)
+	}
 }
 
 func Warn(v ...interface{}) {
@@ -101,7 +109,9 @@ func Warn(v ...interface{}) {
 }
 
 func Warnf(format string, v ...interface{}) {
-	_log.Warningf(format, v...)
+	if DEBUG {
+		_log.Warningf(format, v...)
+	}
 }
 
 func Warning(v ...interface{}) {
@@ -109,7 +119,9 @@ func Warning(v ...interface{}) {
 }
 
 func Warningf(format string, v ...interface{}) {
-	_log.Warningf(format, v...)
+	if DEBUG {
+		_log.Warningf(format, v...)
+	}
 }
 
 func Error(v ...interface{}) {
@@ -117,7 +129,9 @@ func Error(v ...interface{}) {
 }
 
 func Errorf(format string, v ...interface{}) {
-	_log.Errorf(format, v...)
+	if DEBUG {
+		_log.Errorf(format, v...)
+	}
 }
 
 func Fatal(v ...interface{}) {
@@ -125,7 +139,9 @@ func Fatal(v ...interface{}) {
 }
 
 func Fatalf(format string, v ...interface{}) {
-	_log.Fatalf(format, v...)
+	if DEBUG {
+		_log.Fatalf(format, v...)
+	}
 }
 
 func SetLevelByString(level string) {
@@ -196,7 +212,9 @@ func (l *Logger) Panic(v ...interface{}) {
 }
 
 func (l *Logger) Panicf(format string, v ...interface{}) {
-	l._log.Panicf(format, v...)
+	if DEBUG {
+		l._log.Panicf(format, v...)
+	}
 }
 
 func (l *Logger) Error(v ...interface{}) {
@@ -204,7 +222,9 @@ func (l *Logger) Error(v ...interface{}) {
 }
 
 func (l *Logger) Errorf(format string, v ...interface{}) {
-	l.logf(LOG_ERROR, format, v...)
+	if DEBUG {
+		l.logf(LOG_ERROR, format, v...)
+	}
 }
 
 func (l *Logger) Warning(v ...interface{}) {
@@ -212,7 +232,9 @@ func (l *Logger) Warning(v ...interface{}) {
 }
 
 func (l *Logger) Warningf(format string, v ...interface{}) {
-	l.logf(LOG_WARNING, format, v...)
+	if DEBUG {
+		l.logf(LOG_WARNING, format, v...)
+	}
 }
 
 func (l *Logger) Debug(v ...interface{}) {
@@ -220,7 +242,9 @@ func (l *Logger) Debug(v ...interface{}) {
 }
 
 func (l *Logger) Debugf(format string, v ...interface{}) {
-	l.logf(LOG_DEBUG, format, v...)
+	if DEBUG {
+		l.logf(LOG_DEBUG, format, v...)
+	}
 }
 
 func (l *Logger) Info(v ...interface{}) {
@@ -228,7 +252,9 @@ func (l *Logger) Info(v ...interface{}) {
 }
 
 func (l *Logger) Infof(format string, v ...interface{}) {
-	l.logf(LOG_INFO, format, v...)
+	if DEBUG {
+		l.logf(LOG_INFO, format, v...)
+	}
 }
 
 func StringToLogLevel(level string) LogLevel {
