@@ -68,6 +68,9 @@ type Storage interface {
 	// so raft state machine could know that Storage needs some time to prepare
 	// snapshot and call Snapshot later.
 	Snapshot() (pb.Snapshot, error)
+
+	// dummy entry
+	DummyEntry() pb.Entry
 }
 
 // MemoryStorage implements the Storage interface backed by an
@@ -91,6 +94,10 @@ func NewMemoryStorage() *MemoryStorage {
 		ents:     make([]pb.Entry, 1),
 		snapshot: pb.Snapshot{Metadata: &pb.SnapshotMetadata{ConfState: &pb.ConfState{}}},
 	}
+}
+
+func (ms *MemoryStorage) DummyEntry() pb.Entry {
+	return ms.ents[0]
 }
 
 // InitialState implements the Storage interface.

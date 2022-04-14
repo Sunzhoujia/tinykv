@@ -46,6 +46,7 @@ type RaftLog struct {
 	stabled uint64
 
 	// all entries that have not yet compact.
+	// all the entries after last snapshot
 	entries []pb.Entry
 
 	// the incoming unstable snapshot, if any.
@@ -53,6 +54,8 @@ type RaftLog struct {
 	pendingSnapshot *pb.Snapshot
 
 	// Your Data Here (2A).
+	// last snapshot index and all entries index > dummyIndex
+	dummyIndex uint64
 }
 
 // newLog returns log using the given storage. It recovers the log
@@ -67,7 +70,7 @@ func newLog(storage Storage) *RaftLog {
 		storage: storage,
 	}
 
-	fistIndex, err := storage.FirstIndex()
+	firstIndex, err := storage.FirstIndex()
 	if err != nil {
 		panic(err)
 	}
@@ -76,11 +79,24 @@ func newLog(storage Storage) *RaftLog {
 		panic(err)
 	}
 
+	entries, err := storage.Entries(firstIndex, lastIndex+1)
+	if err != nil {
+		panic(err)
+	}
+
+	// snapshot index
+	raftlog.dummyIndex = firstIndex - 1
+
+	// 先存dummyEntry
+	raftlog.entries = append([]pb.Entry{}, storage.DummyEntry())
+	raftlog.entries = append(raftlog.entries, entries...)
+
 	// lastIndex is the last persisted index
 	raftlog.stabled = lastIndex
 
-	raftlog.committed = fistIndex - 1
-	raftlog.applied = fistIndex - 1
+	// firstIndex前面的就是已经做了snapshot的log，一定applied了
+	raftlog.committed = firstIndex - 1
+	raftlog.applied = firstIndex - 1
 
 	return raftlog
 }
@@ -104,29 +120,79 @@ func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	return nil
 }
 
+// Append log entry, return l.lastIndex()
+func (l *RaftLog) append(ents ...pb.Entry) uint64 {
+	if len(ents) == 0 {
+		return l.LastIndex()
+	}
+
+	// 如果索引小于committed，则说明该数据是非法的
+	if after := ents[0].Index - 1; after < l.committed {
+		log.Panicf("after(%d) is out of range [committed(%d)]", after, l.committed)
+	}
+
+	l.truncateAndAppend(ents)
+	return l.LastIndex()
+}
+
+// appendEntries必定经过了日志匹配，所以只可能有以下三种场景：
+// 1. ents恰好接在l.entries后面
+// 2. ents被l.entries包含
+// 3. ents和l.entries重叠了一段
+func (l *RaftLog) truncateAndAppend(ents []pb.Entry) {
+	start := ents[0].Index
+	end := ents[uint64(len(ents)-1)].Index
+	switch {
+	case start == l.LastIndex()+1:
+		log.Infof("truncateAndAppend case 1")
+		l.entries = append(l.entries, ents...)
+	case end < l.LastIndex():
+		log.Infof("truncateAndAppend case 2")
+		// [dummIndex, start) + [start, end] + [end+1, lastIndex]
+		l.entries = append([]pb.Entry{}, l.slice(l.FirstIndex()-1, start)...)
+		l.entries = append(l.entries, ents...)
+		l.entries = append(l.entries, l.slice(end+1, l.LastIndex()+1)...)
+	default:
+		log.Infof("truncateAndAppend case 3")
+		// [dummIndex, start) + [start, end]
+		l.entries = append([]pb.Entry{}, l.slice(l.FirstIndex()-1, start)...)
+		l.entries = append(l.entries, ents...)
+	}
+}
+
+// entry index range [li, hi)
+func (l *RaftLog) slice(lo uint64, hi uint64) []pb.Entry {
+	if lo > hi {
+		log.Panicf("invalid slice %d > %d", lo, hi)
+	}
+	if lo < l.FirstIndex()-1 || hi > l.LastIndex() {
+		log.Panicf("raftLog.entries[%d,%d) out of bound [%d,%d]", lo, hi, l.FirstIndex()-1, l.LastIndex())
+	}
+	offset := l.FirstIndex() - 1
+
+	return l.entries[lo-offset : hi-offset]
+}
+
 // LastIndex return the last index of the log entries
 func (l *RaftLog) LastIndex() uint64 {
 	// Your Code Here (2A).
 	// 先判断log.entries里面有没有entry，没有则去storage里去找
-	if len(l.entries) != 0 {
-		return l.entries[0].Index + uint64(len(l.entries)) - 1
+	if len(l.entries) == 0 {
+		log.Panicf("raftLog.entries is empty")
 	}
 
-	index, err := l.storage.LastIndex()
-	if err != nil {
-		panic(err)
-	}
-	return index
+	return l.entries[uint64(len(l.entries)-1)].Index
 }
 
-// LastIndex return the first index of the log entries(entrirs[0]除外)
+// FirstIndex return the first index of the log entries
+// FirstIndex - 1 = dummyIndex
 func (l *RaftLog) FirstIndex() uint64 {
 	// Your Code Here (2A).
-	index, err := l.storage.FirstIndex()
-	if err != nil {
-		panic(err)
+	if len(l.entries) == 0 {
+		log.Panicf("raftLog.entries is empty")
 	}
-	return index
+
+	return l.entries[0].Index + 1
 }
 
 // 返回最后一个索引的term
@@ -141,27 +207,16 @@ func (l *RaftLog) LastTerm() uint64 {
 // Term return the term of the entry in the given index
 func (l *RaftLog) Term(i uint64) (uint64, error) {
 	// Your Code Here (2A).
-	// the valid term range is [index of dummy entry, last index]
-	dummyIndex := l.FirstIndex() - 1
-	if i < dummyIndex || i > l.LastIndex() {
-		log.Panicf("unexpected error when getting the %d term", i)
+	if i < l.FirstIndex()-1 {
+		return 0, ErrCompacted
 	}
 
-	// entry在l.entries中
-	if len(l.entries) > 0 && i >= l.entries[0].Index {
-		return l.entries[i-l.entries[0].Index].Term, nil
+	if i > l.LastIndex() {
+		return 0, ErrUnavailable
 	}
 
-	// entry在storage中
-	t, err := l.storage.Term(i)
-	if err == nil {
-		return t, nil
-	}
-
-	if err == ErrCompacted || err == ErrUnavailable {
-		return 0, err
-	}
-	panic(err)
+	offset := l.FirstIndex() - 1
+	return l.entries[i-offset].Term, nil
 }
 
 func (l *RaftLog) isUpToDate(lastIndex, term uint64) bool {
@@ -176,4 +231,14 @@ func (l *RaftLog) commitTo(tocommit uint64) {
 		l.committed = tocommit
 		log.Infof("commit to %d", tocommit)
 	}
+}
+
+func (l *RaftLog) appliedTo(i uint64) {
+	if i == 0 {
+		return
+	}
+	if l.committed < i || i < l.applied {
+		log.Panicf("applied(%d) is out of range [prevApplied(%d), committed(%d)]", i, l.applied, l.committed)
+	}
+	l.applied = i
 }

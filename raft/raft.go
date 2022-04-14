@@ -105,12 +105,6 @@ func (c *Config) validate() error {
 	return nil
 }
 
-// Progress represents a follower’s progress in the view of the leader. Leader maintains
-// progresses of all followers, and sends entries to the follower based on its progress.
-type Progress struct {
-	Match, Next uint64
-}
-
 type Raft struct {
 	id uint64
 
@@ -203,6 +197,10 @@ func newRaft(c *Config) *Raft {
 		r.loadState(hs)
 	}
 
+	if c.Applied > 0 {
+		raftlog.appliedTo(c.Applied)
+	}
+
 	r.becomeFollower(r.Term, None)
 
 	var nodesStrs []string
@@ -271,6 +269,20 @@ func (r *Raft) tickHeartbeat() {
 	}
 }
 
+func (r *Raft) appendEntry(es ...pb.Entry) {
+	li := r.RaftLog.LastIndex()
+	for i := range es {
+		es[i].Index = li + 1 + uint64(i)
+		es[i].Term = r.Term
+	}
+
+	r.RaftLog.append(es...)
+	r.Prs[r.id].maybeUpdate(r.RaftLog.LastIndex())
+
+	// append之后，尝试一下是否可以进行commit。比如单机场景，append完就可以commit
+	r.maybecommit()
+}
+
 // becomeFollower transform this peer's state to Follower
 func (r *Raft) becomeFollower(term uint64, lead uint64) {
 	// Your Code Here (2A).
@@ -306,7 +318,8 @@ func (r *Raft) becomeLeader() {
 	r.Lead = r.id
 	r.State = StateLeader
 
-	// TO-DO: no-op log entry
+	// when became leader, propose a no-op entry immediately
+	r.appendEntry(pb.Entry{Data: nil})
 
 	log.Infof("%x became leader at term %d", r.id, r.Term)
 }
@@ -502,6 +515,12 @@ func (r *Raft) addNode(id uint64) {
 // removeNode remove a node from raft group
 func (r *Raft) removeNode(id uint64) {
 	// Your Code Here (3A).
+}
+
+// maybeCommit attempts to advance the commit index. Returns true if
+// the commit index changed
+func (r *Raft) maybecommit() bool {
+	return false
 }
 
 func (r *Raft) reset(term uint64) {
