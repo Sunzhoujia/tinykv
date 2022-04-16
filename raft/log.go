@@ -205,6 +205,7 @@ func (l *RaftLog) truncateAndAppend(ents []pb.Entry) {
 		l.entries = append([]pb.Entry{}, l.slice(l.FirstIndex(), start)...)
 		l.entries = append(l.entries, ents...)
 	}
+	// update l.stabled here?
 	l.stabled = min(l.stabled, start-1)
 
 }
