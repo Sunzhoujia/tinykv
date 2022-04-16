@@ -87,8 +87,6 @@ func newLog(storage Storage) *RaftLog {
 	// snapshot index
 	raftlog.dummyIndex = firstIndex - 1
 
-	// 先存dummyEntry
-	// raftlog.entries = append([]pb.Entry{}, storage.DummyEntry())
 	raftlog.entries = append([]pb.Entry{}, entries...)
 
 	// lastIndex is the last persisted index
@@ -230,7 +228,6 @@ func (l *RaftLog) LastIndex() uint64 {
 	// 先判断log.entries里面有没有entry，没有则去storage里去找
 	if len(l.entries) == 0 {
 		return l.dummyIndex
-		//log.Panicf("raftLog.entries is empty")
 	}
 
 	return l.entries[uint64(len(l.entries)-1)].Index
@@ -241,7 +238,6 @@ func (l *RaftLog) LastIndex() uint64 {
 func (l *RaftLog) FirstIndex() uint64 {
 	// Your Code Here (2A).
 	if len(l.entries) == 0 {
-		//log.Panicf("raftLog.entries is empty")
 		return l.dummyIndex + 1
 	}
 
@@ -260,7 +256,6 @@ func (l *RaftLog) LastTerm() uint64 {
 // Term return the term of the entry in the given index
 func (l *RaftLog) Term(i uint64) (uint64, error) {
 	// Your Code Here (2A).
-
 	if i < l.FirstIndex()-1 {
 		return 0, ErrCompacted
 	}

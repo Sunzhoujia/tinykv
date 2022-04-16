@@ -168,7 +168,6 @@ func newRaft(c *Config) *Raft {
 		panic(err.Error())
 	}
 	// Your Code Here (2A).
-
 	// storage存的是已经持久化的hardstate，snapshot，entries
 	raftlog := newLog(c.Storage)
 	hs, _, err := c.Storage.InitialState()
@@ -228,10 +227,6 @@ func (r *Raft) sendAppend(to uint64) bool {
 	// 获取Next之后的log
 	ents, erre := r.RaftLog.Entries(pr.Next)
 
-	// if len(ents) == 0 {
-	// 	return false
-	// }
-	//log.Infof("gen entries %+v", ents)
 	if errt != nil || erre != nil {
 		// TO-DO: send snapshot
 		panic("need snapshot")
@@ -289,18 +284,15 @@ func (r *Raft) tickHeartbeat() {
 	r.heartbeatElapsed++
 
 	// TO-DO: checkQuorum
-
 	if r.State != StateLeader {
 		return
 	}
-
 	if r.heartbeatElapsed >= r.heartbeatTimeout {
 		r.heartbeatElapsed = 0
 		if err := r.Step(pb.Message{From: r.id, MsgType: pb.MessageType_MsgBeat}); err != nil {
 			log.Debugf("error occurred during checking sending heartbeat: %v", err)
 		}
 	}
-
 }
 
 func (r *Raft) appendEntry(es ...*pb.Entry) (accepted bool) {
@@ -355,9 +347,7 @@ func (r *Raft) becomeLeader() {
 	r.Lead = r.id
 	r.State = StateLeader
 
-	// when became leader, propose a no-op entry immediately
 	r.appendEntry(&pb.Entry{Data: nil})
-
 	log.Infof("%x became leader at term %d, l.entries %v", r.id, r.Term, r.RaftLog.entries)
 }
 
@@ -365,7 +355,7 @@ func (r *Raft) becomeLeader() {
 // on `eraftpb.proto` for what msgs should be handled
 func (r *Raft) Step(m pb.Message) error {
 	// Your Code Here (2A).
-	log.Infof("m.term %d", m.Term)
+	//log.Infof("m.term %d", m.Term)
 	// Handle the message term, which may result in out stepping down to a follower
 	switch {
 	case m.Term == 0:
@@ -471,7 +461,6 @@ func stepLeader(r *Raft, m pb.Message) error {
 				r.id, m.Index, m.From, preIndex, oricommitted, r.RaftLog.committed)
 		}
 	}
-
 	return nil
 }
 
@@ -567,9 +556,6 @@ func (r *Raft) send(m pb.Message) {
 		}
 	} else {
 		// 其他的消息类型，term必须为空, 在这里才去填充
-		// if m.Term != 0 {
-		// 	panic(fmt.Sprintf("term should not be set when sending %s (was %d)", m.MsgType, m.Term))
-		// }
 		m.Term = r.Term
 	}
 	r.msgs = append(r.msgs, m)
@@ -604,8 +590,7 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	}
 
 	// 验证用于日志匹配的字段Term与Index是否与本地的日志匹配。如果匹配并保存了日志，则返回MsgAppResp消息，并将消息的Index字段置为本地最后一条日志的index，以让leader发送后续的日志。
-
-	log.Infof("handle append entries: %v", m.Entries)
+	//log.Infof("handle append entries: %v", m.Entries)
 	if mlastIndex, ok := r.RaftLog.maybeAppend(m.Index, m.LogTerm, m.Commit, r.RaftLog.PToEnts(m.Entries)...); ok {
 		log.Infof("%x [Term: %d, matchIndex: %d] accepted msgApp [logterm: %d, index: %d] from %x",
 			r.id, r.Term, r.RaftLog.LastIndex(), m.LogTerm, m.Index, m.From)
@@ -645,7 +630,7 @@ func (r *Raft) removeNode(id uint64) {
 // maybeCommit attempts to advance the commit index. Returns true if
 // the commit index changed
 func (r *Raft) maybecommit() bool {
-	mci := r.Committed() // calculate max matchIndex according Prs
+	mci := r.committed() // calculate max matchIndex according Prs
 	return r.RaftLog.maybeCommit(mci, r.Term)
 }
 
@@ -714,7 +699,7 @@ func (r *Raft) quorum() int {
 	return len(r.Prs)/2 + 1
 }
 
-func (r *Raft) Committed() uint64 {
+func (r *Raft) committed() uint64 {
 	n := len(r.Prs)
 	if n == 0 {
 		return math.MaxUint64
