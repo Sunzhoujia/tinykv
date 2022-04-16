@@ -1,0 +1,70 @@
+2022/04/15 22:27:36 raft_paper_test.go:652: [0;37m[info] =============i 0[0m
+2022/04/15 22:27:36 raft.go:330: [0;37m[info] 1 became follower at term 0[0m
+2022/04/15 22:27:36 raft.go:212: [0;37m[info] newRaft 1 [peers: [], term: 0 ][0m
+2022/04/15 22:27:36 raft.go:330: [0;37m[info] 1 became follower at term 2[0m
+2022/04/15 22:27:36 raft.go:368: [0;37m[info] m.term 2[0m
+2022/04/15 22:27:36 raft.go:522: [0;37m[info] follower append entries [term:3 index:3 ] at term 2[0m
+2022/04/15 22:27:36 raft.go:608: [0;37m[info] handle append entries: [term:3 index:3 ][0m
+2022/04/15 22:27:36 log.go:310: [0;37m[info] match firstIndex 3[0m
+2022/04/15 22:27:36 log.go:167: [0;37m[info] l.entries before append [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 2 2 [] {} [] 0}][0m
+2022/04/15 22:27:36 log.go:168: [0;37m[info] ents before append [{EntryNormal 3 3 [] {} [] 0}][0m
+2022/04/15 22:27:36 log.go:182: [0;37m[info] truncateAndAppend case 1[0m
+2022/04/15 22:27:36 raft.go:610: [0;37m[info] 1 [Term: 2, matchIndex: 3] accepted msgApp [logterm: 2, index: 2] from 2[0m
+2022/04/15 22:27:36 raft_paper_test.go:664: [0;37m[info] -----------------1------------ , l.entries [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 2 2 [] {} [] 0} {EntryNormal 3 3 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:665: [0;37m[info] -----------------1------------ , wants [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 2 2 [] {} [] 0} {EntryNormal 3 3 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:670: [0;37m[info] -----------------2------------[0m
+2022/04/15 22:27:36 log.go:215: [0;37m[info] entries [3, 4), [{EntryNormal 3 3 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:652: [0;37m[info] =============i 1[0m
+2022/04/15 22:27:36 raft.go:330: [0;37m[info] 1 became follower at term 0[0m
+2022/04/15 22:27:36 raft.go:212: [0;37m[info] newRaft 1 [peers: [], term: 0 ][0m
+2022/04/15 22:27:36 raft.go:330: [0;37m[info] 1 became follower at term 2[0m
+2022/04/15 22:27:36 raft.go:368: [0;37m[info] m.term 2[0m
+2022/04/15 22:27:36 raft.go:522: [0;37m[info] follower append entries [term:3 index:2  term:4 index:3 ] at term 2[0m
+2022/04/15 22:27:36 raft.go:608: [0;37m[info] handle append entries: [term:3 index:2  term:4 index:3 ][0m
+2022/04/15 22:27:36 log.go:366: [0;37m[info] found conflict at index 2 [existing term: 2, conflicting term: 3][0m
+2022/04/15 22:27:36 log.go:310: [0;37m[info] match firstIndex 2[0m
+2022/04/15 22:27:36 log.go:167: [0;37m[info] l.entries before append [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 2 2 [] {} [] 0}][0m
+2022/04/15 22:27:36 log.go:168: [0;37m[info] ents before append [{EntryNormal 3 2 [] {} [] 0} {EntryNormal 4 3 [] {} [] 0}][0m
+2022/04/15 22:27:36 log.go:197: [0;37m[info] truncateAndAppend case 3: start 2, end 3[0m
+2022/04/15 22:27:36 log.go:215: [0;37m[info] entries [1, 2), [{EntryNormal 1 1 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft.go:610: [0;37m[info] 1 [Term: 2, matchIndex: 3] accepted msgApp [logterm: 1, index: 1] from 2[0m
+2022/04/15 22:27:36 raft_paper_test.go:664: [0;37m[info] -----------------1------------ , l.entries [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 3 2 [] {} [] 0} {EntryNormal 4 3 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:665: [0;37m[info] -----------------1------------ , wants [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 3 2 [] {} [] 0} {EntryNormal 4 3 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:670: [0;37m[info] -----------------2------------[0m
+2022/04/15 22:27:36 log.go:215: [0;37m[info] entries [2, 4), [{EntryNormal 3 2 [] {} [] 0} {EntryNormal 4 3 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:652: [0;37m[info] =============i 2[0m
+2022/04/15 22:27:36 raft.go:330: [0;37m[info] 1 became follower at term 0[0m
+2022/04/15 22:27:36 raft.go:212: [0;37m[info] newRaft 1 [peers: [], term: 0 ][0m
+2022/04/15 22:27:36 raft.go:330: [0;37m[info] 1 became follower at term 2[0m
+2022/04/15 22:27:36 raft.go:368: [0;37m[info] m.term 2[0m
+2022/04/15 22:27:36 raft.go:522: [0;37m[info] follower append entries [term:1 index:1 ] at term 2[0m
+2022/04/15 22:27:36 raft.go:608: [0;37m[info] handle append entries: [term:1 index:1 ][0m
+2022/04/15 22:27:36 log.go:310: [0;37m[info] match firstIndex 0[0m
+2022/04/15 22:27:36 raft.go:610: [0;37m[info] 1 [Term: 2, matchIndex: 2] accepted msgApp [logterm: 0, index: 0] from 2[0m
+2022/04/15 22:27:36 raft_paper_test.go:664: [0;37m[info] -----------------1------------ , l.entries [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 2 2 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:665: [0;37m[info] -----------------1------------ , wants [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 2 2 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:670: [0;37m[info] -----------------2------------[0m
+2022/04/15 22:27:36 log.go:215: [0;37m[info] entries [3, 3), [][0m
+2022/04/15 22:27:36 raft_paper_test.go:652: [0;37m[info] =============i 3[0m
+2022/04/15 22:27:36 raft.go:330: [0;37m[info] 1 became follower at term 0[0m
+2022/04/15 22:27:36 raft.go:212: [0;37m[info] newRaft 1 [peers: [], term: 0 ][0m
+2022/04/15 22:27:36 raft.go:330: [0;37m[info] 1 became follower at term 2[0m
+2022/04/15 22:27:36 raft.go:368: [0;37m[info] m.term 2[0m
+2022/04/15 22:27:36 raft.go:522: [0;37m[info] follower append entries [term:3 index:1 ] at term 2[0m
+2022/04/15 22:27:36 raft.go:608: [0;37m[info] handle append entries: [term:3 index:1 ][0m
+2022/04/15 22:27:36 log.go:366: [0;37m[info] found conflict at index 1 [existing term: 1, conflicting term: 3][0m
+2022/04/15 22:27:36 log.go:310: [0;37m[info] match firstIndex 1[0m
+2022/04/15 22:27:36 log.go:167: [0;37m[info] l.entries before append [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 2 2 [] {} [] 0}][0m
+2022/04/15 22:27:36 log.go:168: [0;37m[info] ents before append [{EntryNormal 3 1 [] {} [] 0}][0m
+2022/04/15 22:27:36 log.go:185: [0;37m[info] truncateAndAppend case 2, start 1, end 1, lastIndex 2[0m
+2022/04/15 22:27:36 log.go:187: [0;37m[info] before1 entries [{EntryType:EntryNormal Term:1 Index:1 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0} {EntryType:EntryNormal Term:2 Index:2 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}][0m
+2022/04/15 22:27:36 log.go:188: [0;37m[info] before1 ents [{EntryType:EntryNormal Term:3 Index:1 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}][0m
+2022/04/15 22:27:36 log.go:215: [0;37m[info] entries [1, 1), [][0m
+2022/04/15 22:27:36 log.go:195: [0;37m[info] after entries [{EntryNormal 3 1 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft.go:610: [0;37m[info] 1 [Term: 2, matchIndex: 1] accepted msgApp [logterm: 0, index: 0] from 2[0m
+2022/04/15 22:27:36 raft_paper_test.go:664: [0;37m[info] -----------------1------------ , l.entries [{EntryNormal 3 1 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:665: [0;37m[info] -----------------1------------ , wants [{EntryNormal 3 1 [] {} [] 0}][0m
+2022/04/15 22:27:36 raft_paper_test.go:670: [0;37m[info] -----------------2------------[0m
+2022/04/15 22:27:36 log.go:215: [0;37m[info] entries [1, 2), [{EntryNormal 3 1 [] {} [] 0}][0m
+PASS
+ok  	github.com/pingcap-incubator/tinykv/raft	0.004s

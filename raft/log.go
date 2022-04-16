@@ -88,8 +88,8 @@ func newLog(storage Storage) *RaftLog {
 	raftlog.dummyIndex = firstIndex - 1
 
 	// 先存dummyEntry
-	raftlog.entries = append([]pb.Entry{}, storage.DummyEntry())
-	raftlog.entries = append(raftlog.entries, entries...)
+	// raftlog.entries = append([]pb.Entry{}, storage.DummyEntry())
+	raftlog.entries = append([]pb.Entry{}, entries...)
 
 	// lastIndex is the last persisted index
 	raftlog.stabled = lastIndex
@@ -111,13 +111,46 @@ func (l *RaftLog) maybeCompact() {
 // unstableEntries return all the unstable entries
 func (l *RaftLog) unstableEntries() []pb.Entry {
 	// Your Code Here (2A).
-	return nil
+	return l.slice(l.stabled+1, l.LastIndex()+1)
 }
 
 // nextEnts returns all the committed but not applied entries
 func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	// Your Code Here (2A).
-	return nil
+	return l.slice(l.applied+1, l.committed+1)
+}
+
+// return entries from given index
+// l think compact often happen, so won't return many entries
+func (l *RaftLog) Entries(i uint64) ([]pb.Entry, error) {
+	if i > l.LastIndex() {
+		return nil, nil
+	}
+
+	// i <= dummIndex，已经无法获取该log
+	if i < l.FirstIndex() {
+		return nil, ErrCompacted
+	}
+
+	log.Infof("l.entries %v, [%d, %d)", l.entries, i, l.LastIndex()+1)
+	return l.slice(i, l.LastIndex()+1), nil
+}
+
+// because msg need send []*pb.Entry, so we need change to pointer slice
+func (l *RaftLog) EntsToP(ents []pb.Entry) []*pb.Entry {
+	pents := []*pb.Entry{}
+	for i := 0; i < len(ents); i++ {
+		pents = append(pents, &ents[i])
+	}
+	return pents
+}
+
+func (l *RaftLog) PToEnts(pents []*pb.Entry) []pb.Entry {
+	ents := []pb.Entry{}
+	for _, e := range pents {
+		ents = append(ents, *e)
+	}
+	return ents
 }
 
 // Append log entry, return l.lastIndex()
@@ -130,7 +163,9 @@ func (l *RaftLog) append(ents ...pb.Entry) uint64 {
 	if after := ents[0].Index - 1; after < l.committed {
 		log.Panicf("after(%d) is out of range [committed(%d)]", after, l.committed)
 	}
-
+	//log.Infof("try to append entries [firstIndex %d, lastIndex %d] to lastIndex %d", ents[0].Index, ents[uint64(len(ents)-1)].Index, l.LastIndex())
+	// log.Infof("l.entries before append %v", l.entries)
+	// log.Infof("ents before append %v", ents)
 	l.truncateAndAppend(ents)
 	return l.LastIndex()
 }
@@ -147,17 +182,20 @@ func (l *RaftLog) truncateAndAppend(ents []pb.Entry) {
 		log.Infof("truncateAndAppend case 1")
 		l.entries = append(l.entries, ents...)
 	case end < l.LastIndex():
-		log.Infof("truncateAndAppend case 2")
+		log.Infof("truncateAndAppend case 2, start %d, end %d, lastIndex %d", start, end, l.LastIndex())
 		// [dummIndex, start) + [start, end] + [end+1, lastIndex]
-		l.entries = append([]pb.Entry{}, l.slice(l.FirstIndex()-1, start)...)
-		l.entries = append(l.entries, ents...)
-		l.entries = append(l.entries, l.slice(end+1, l.LastIndex()+1)...)
+		// log.Infof("before1 entries %+v", l.entries)
+		// log.Infof("before1 ents %+v", ents)
+		firstEnts := l.slice(l.FirstIndex(), start)
+		l.entries = append(firstEnts, ents...)
 	default:
-		log.Infof("truncateAndAppend case 3")
+		log.Infof("truncateAndAppend case 3: start %d, end %d", start, end)
 		// [dummIndex, start) + [start, end]
-		l.entries = append([]pb.Entry{}, l.slice(l.FirstIndex()-1, start)...)
+		l.entries = append([]pb.Entry{}, l.slice(l.FirstIndex(), start)...)
 		l.entries = append(l.entries, ents...)
 	}
+	l.stabled = min(l.stabled, start-1)
+
 }
 
 // entry index range [li, hi)
@@ -165,11 +203,11 @@ func (l *RaftLog) slice(lo uint64, hi uint64) []pb.Entry {
 	if lo > hi {
 		log.Panicf("invalid slice %d > %d", lo, hi)
 	}
-	if lo < l.FirstIndex()-1 || hi > l.LastIndex() {
+	if lo < l.FirstIndex() || hi > l.LastIndex()+1 {
 		log.Panicf("raftLog.entries[%d,%d) out of bound [%d,%d]", lo, hi, l.FirstIndex()-1, l.LastIndex())
 	}
-	offset := l.FirstIndex() - 1
-
+	offset := l.FirstIndex()
+	log.Infof("entries [%d, %d), %v", lo, hi, l.entries[lo-offset:hi-offset])
 	return l.entries[lo-offset : hi-offset]
 }
 
@@ -178,7 +216,8 @@ func (l *RaftLog) LastIndex() uint64 {
 	// Your Code Here (2A).
 	// 先判断log.entries里面有没有entry，没有则去storage里去找
 	if len(l.entries) == 0 {
-		log.Panicf("raftLog.entries is empty")
+		return l.dummyIndex
+		//log.Panicf("raftLog.entries is empty")
 	}
 
 	return l.entries[uint64(len(l.entries)-1)].Index
@@ -189,10 +228,11 @@ func (l *RaftLog) LastIndex() uint64 {
 func (l *RaftLog) FirstIndex() uint64 {
 	// Your Code Here (2A).
 	if len(l.entries) == 0 {
-		log.Panicf("raftLog.entries is empty")
+		//log.Panicf("raftLog.entries is empty")
+		return l.dummyIndex + 1
 	}
 
-	return l.entries[0].Index + 1
+	return l.entries[0].Index
 }
 
 // 返回最后一个索引的term
@@ -207,6 +247,7 @@ func (l *RaftLog) LastTerm() uint64 {
 // Term return the term of the entry in the given index
 func (l *RaftLog) Term(i uint64) (uint64, error) {
 	// Your Code Here (2A).
+
 	if i < l.FirstIndex()-1 {
 		return 0, ErrCompacted
 	}
@@ -215,7 +256,12 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 		return 0, ErrUnavailable
 	}
 
-	offset := l.FirstIndex() - 1
+	if i == l.dummyIndex {
+		t, err := l.storage.Term(i)
+		return t, err
+	}
+
+	offset := l.FirstIndex()
 	return l.entries[i-offset].Term, nil
 }
 
@@ -241,4 +287,84 @@ func (l *RaftLog) appliedTo(i uint64) {
 		log.Panicf("applied(%d) is out of range [prevApplied(%d), committed(%d)]", i, l.applied, l.committed)
 	}
 	l.applied = i
+}
+
+// check if matchIndex.Term == term
+func (l *RaftLog) maybeCommit(maxIndex, term uint64) bool {
+	if maxIndex > l.committed && l.zeroTermOnErrCompacted(l.Term(maxIndex)) == term {
+		l.commitTo(maxIndex)
+		return true
+	}
+	return false
+}
+
+// 1. log match
+// 2. append log entries
+func (l *RaftLog) maybeAppend(index, logTerm, committed uint64, ents ...pb.Entry) (lastnewi uint64, ok bool) {
+	if l.matchTerm(index, logTerm) {
+		lastnewi = index + uint64(len(ents))
+		ci := l.findConflict(ents)
+		log.Infof("match firstIndex %d", ci)
+		switch {
+		case ci == 0:
+		case ci <= l.committed:
+			// 如果返回值小于当前的committed索引，说明committed前的日志发生了冲突，这违背了Raft算法保证的Log Matching性质，因此会引起panic。
+			log.Panicf("entry %d conflict with committed entry [committed(%d)]", ci, l.committed)
+		default:
+			// 如果返回值大于committed，既可能是冲突发生在committed之后，也可能是有新日志，
+			// 但二者的处理方式都是相同的，即从将从冲突处或新日志处开始的日志覆盖或追加到当前日志中即可。
+			offset := index + 1
+			if ci-offset > uint64(len(ents)) {
+				log.Panicf("index, %d, is out of range [%d]", ci-offset, len(ents))
+			}
+			l.append(ents[ci-offset:]...)
+		}
+		// 更新当前的committed索引为给定的新日志中最后一条日志的index（lastnewi）和传入的新的committed中较小的一个
+		// commitTo方法保证了committed索引只会前进而不会回退，而使用lastnewi和传入的committed中的最小值则是因为传入的数据可能有如下两种情况：
+		// 1. leader给follower复制日志时，如果复制的日志条目超过了单个消息的上限，
+		//    则可能出现leader传给follower的committed值大于该follower复制完这条消息中的日志后的最大index。此时，该follower的新committed值为lastnewi。
+		// 2. follower能够跟上leader，leader传给follower的日志中有未确认被法定数量节点稳定存储的日志，
+		//    此时传入的committed比lastnewi小，该follower的新committed值为传入的committed值。
+		l.commitTo(min(committed, lastnewi))
+		return lastnewi, true
+	}
+
+	return 0, false
+}
+
+func (l *RaftLog) zeroTermOnErrCompacted(t uint64, err error) uint64 {
+	if err == nil || err == ErrUnavailable {
+		return t
+	}
+	if err == ErrCompacted {
+		return 0
+	}
+
+	log.Panicf("unexpected error (%v)", err)
+	return 0
+}
+
+func (l *RaftLog) matchTerm(index, term uint64) bool {
+	t, err := l.Term(index)
+	if err != nil {
+		return false
+	}
+	return t == term
+}
+
+// 1. 给定的日志与已有的日志的index和term冲突，返回第一条冲突的日志条目的index。
+// 2. 没有冲突，且给定的日志的所有条目均已在已有日志中，返回0.
+// 3. 给定的日志中包含已有日志中没有的新日志，返回第一条新日志的index。
+func (l *RaftLog) findConflict(ents []pb.Entry) uint64 {
+	for _, ne := range ents {
+		if !l.matchTerm(ne.Index, ne.Term) {
+			if ne.Index <= l.LastIndex() {
+				//log.Infof("ne.Index %d, l.lastIndex %d", ne.Index, l.LastIndex())
+				log.Infof("found conflict at index %d [existing term: %d, conflicting term: %d]",
+					ne.Index, l.zeroTermOnErrCompacted(l.Term(ne.Index)), ne.Term)
+			}
+			return ne.Index
+		}
+	}
+	return 0
 }

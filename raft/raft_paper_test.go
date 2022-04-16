@@ -370,10 +370,11 @@ func TestLeaderStartReplication2AB(t *testing.T) {
 
 	ents := []*pb.Entry{{Data: []byte("some data")}}
 	r.Step(pb.Message{From: 1, To: 1, MsgType: pb.MessageType_MsgPropose, Entries: ents})
-
+	//2
 	if g := r.RaftLog.LastIndex(); g != li+1 {
 		t.Errorf("lastIndex = %d, want %d", g, li+1)
 	}
+	//li = 1
 	if g := r.RaftLog.committed; g != li {
 		t.Errorf("committed = %d, want %d", g, li)
 	}
@@ -651,7 +652,7 @@ func TestFollowerAppendEntries2AB(t *testing.T) {
 		storage.Append([]pb.Entry{{Term: 1, Index: 1}, {Term: 2, Index: 2}})
 		r := newTestRaft(1, []uint64{1, 2, 3}, 10, 1, storage)
 		r.becomeFollower(2, 2)
-
+		// term 2, index 2
 		r.Step(pb.Message{From: 2, To: 1, MsgType: pb.MessageType_MsgAppend, Term: 2, LogTerm: tt.term, Index: tt.index, Entries: tt.ents})
 
 		wents := make([]pb.Entry, 0, len(tt.wents))

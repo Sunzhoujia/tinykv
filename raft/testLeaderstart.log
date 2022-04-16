@@ -1,0 +1,32 @@
+2022/04/15 22:15:18 raft.go:330: [0;37m[info] 1 became follower at term 0[0m
+2022/04/15 22:15:18 raft.go:212: [0;37m[info] newRaft 1 [peers: [], term: 0 ][0m
+2022/04/15 22:15:18 raft.go:343: [0;37m[info] 1 became candidate at term 1[0m
+2022/04/15 22:15:18 log.go:167: [0;37m[info] l.entries before append [][0m
+2022/04/15 22:15:18 log.go:168: [0;37m[info] ents before append [{EntryNormal 1 1 [] {} [] 0}][0m
+2022/04/15 22:15:18 log.go:182: [0;37m[info] truncateAndAppend case 1[0m
+2022/04/15 22:15:18 raft.go:361: [0;37m[info] 1 became leader at term 1, l.entries [{EntryNormal 1 1 [] {} [] 0}][0m
+2022/04/15 22:15:18 log.go:135: [0;37m[info] l.entries [{EntryNormal 1 1 [] {} [] 0}], [1, 2)[0m
+2022/04/15 22:15:18 log.go:215: [0;37m[info] entries [1, 2), [{EntryNormal 1 1 [] {} [] 0}][0m
+2022/04/15 22:15:18 raft.go:244: [0;37m[info] 1 [term: 1, commit: 0, LastIndex: 1] send replication messages[PreIndex: 0, LogTerm: 0, entries [term:1 index:1 ]] to 2[0m
+2022/04/15 22:15:18 log.go:135: [0;37m[info] l.entries [{EntryNormal 1 1 [] {} [] 0}], [1, 2)[0m
+2022/04/15 22:15:18 log.go:215: [0;37m[info] entries [1, 2), [{EntryNormal 1 1 [] {} [] 0}][0m
+2022/04/15 22:15:18 raft.go:244: [0;37m[info] 1 [term: 1, commit: 0, LastIndex: 1] send replication messages[PreIndex: 0, LogTerm: 0, entries [term:1 index:1 ]] to 3[0m
+2022/04/15 22:15:18 raft.go:368: [0;37m[info] m.term 1[0m
+2022/04/15 22:15:18 log.go:283: [0;37m[info] commit to 1[0m
+2022/04/15 22:15:18 raft.go:470: [0;37m[info] 1 received msgApp agreement(matchIndex: 1) from 2 for index 0 ,and update committed from 0 to 1[0m
+2022/04/15 22:15:18 raft.go:368: [0;37m[info] m.term 1[0m
+2022/04/15 22:15:18 raft.go:470: [0;37m[info] 1 received msgApp agreement(matchIndex: 1) from 3 for index 0 ,and update committed from 1 to 1[0m
+2022/04/15 22:15:18 log.go:215: [0;37m[info] entries [1, 2), [{EntryNormal 1 1 [] {} [] 0}][0m
+2022/04/15 22:15:18 raft.go:368: [0;37m[info] m.term 0[0m
+2022/04/15 22:15:18 log.go:167: [0;37m[info] l.entries before append [{EntryNormal 1 1 [] {} [] 0}][0m
+2022/04/15 22:15:18 log.go:168: [0;37m[info] ents before append [{EntryNormal 1 2 [115 111 109 101 32 100 97 116 97] {} [] 0}][0m
+2022/04/15 22:15:18 log.go:182: [0;37m[info] truncateAndAppend case 1[0m
+2022/04/15 22:15:18 log.go:135: [0;37m[info] l.entries [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 1 2 [115 111 109 101 32 100 97 116 97] {} [] 0}], [2, 3)[0m
+2022/04/15 22:15:18 log.go:215: [0;37m[info] entries [2, 3), [{EntryNormal 1 2 [115 111 109 101 32 100 97 116 97] {} [] 0}][0m
+2022/04/15 22:15:18 raft.go:244: [0;37m[info] 1 [term: 1, commit: 1, LastIndex: 2] send replication messages[PreIndex: 1, LogTerm: 1, entries [term:1 index:2 data:"some data" ]] to 2[0m
+2022/04/15 22:15:18 log.go:135: [0;37m[info] l.entries [{EntryNormal 1 1 [] {} [] 0} {EntryNormal 1 2 [115 111 109 101 32 100 97 116 97] {} [] 0}], [2, 3)[0m
+2022/04/15 22:15:18 log.go:215: [0;37m[info] entries [2, 3), [{EntryNormal 1 2 [115 111 109 101 32 100 97 116 97] {} [] 0}][0m
+2022/04/15 22:15:18 raft.go:244: [0;37m[info] 1 [term: 1, commit: 1, LastIndex: 2] send replication messages[PreIndex: 1, LogTerm: 1, entries [term:1 index:2 data:"some data" ]] to 3[0m
+2022/04/15 22:15:18 log.go:215: [0;37m[info] entries [2, 3), [{EntryNormal 1 2 [115 111 109 101 32 100 97 116 97] {} [] 0}][0m
+PASS
+ok  	github.com/pingcap-incubator/tinykv/raft	0.004s
