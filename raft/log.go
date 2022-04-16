@@ -120,6 +120,19 @@ func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	return l.slice(l.applied+1, l.committed+1)
 }
 
+// hasNextEnts returns if there is any available entries for execution. This
+// is a fast check without heavy raftLog.slice() in raftLog.nextEnts().
+func (l *RaftLog) hasNextEnts() bool {
+	//off := max(l.applied+1, l.FirstIndex())
+	off := l.applied + 1
+	return l.committed+1 > off
+}
+
+// hasPendingSnapshot returns if there is pending snapshot waiting for applying.
+func (l *RaftLog) hasPendingSnapshot() bool {
+	return l.pendingSnapshot != nil && !IsEmptySnap(l.pendingSnapshot)
+}
+
 // return entries from given index
 // l think compact often happen, so won't return many entries
 func (l *RaftLog) Entries(i uint64) ([]pb.Entry, error) {
@@ -287,6 +300,25 @@ func (l *RaftLog) appliedTo(i uint64) {
 		log.Panicf("applied(%d) is out of range [prevApplied(%d), committed(%d)]", i, l.applied, l.committed)
 	}
 	l.applied = i
+}
+
+func (l *RaftLog) stableSnapTo(i uint64) {
+	if l.pendingSnapshot != nil && l.pendingSnapshot.Metadata.Index == i {
+		l.pendingSnapshot = nil
+	}
+}
+
+func (l *RaftLog) stableTo(i, t uint64) {
+	// 1. entry为snapshot 的最后一个entry
+	// 2. entry在raftLog.entries中
+	gt, err := l.Term(i)
+	if err != nil {
+		return
+	}
+
+	if gt == t && i >= l.stabled {
+		l.stabled = i
+	}
 }
 
 // check if matchIndex.Term == term

@@ -736,3 +736,13 @@ func (r *Raft) Committed() uint64 {
 	pos := n - (n/2 + 1)
 	return srt[pos]
 }
+
+func (r *Raft) softState() *SoftState { return &SoftState{Lead: r.Lead, RaftState: r.State} }
+
+func (r *Raft) hardState() pb.HardState {
+	return pb.HardState{
+		Term:   r.Term,
+		Vote:   r.Vote,
+		Commit: r.RaftLog.committed,
+	}
+}
