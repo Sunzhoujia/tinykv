@@ -37,6 +37,7 @@ func isRangeEmpty(engine *badger.DB, startKey, endKey []byte) (bool, error) {
 	return !hasData, err
 }
 
+// 存store的元数据
 func BootstrapStore(engines *engine_util.Engines, clusterID, storeID uint64) error {
 	ident := new(rspb.StoreIdent)
 	empty, err := isRangeEmpty(engines.Kv, meta.MinKey, meta.MaxKey)
@@ -89,6 +90,7 @@ func PrepareBootstrapCluster(engines *engine_util.Engines, region *metapb.Region
 	state := new(rspb.RegionLocalState)
 	state.Region = region
 	kvWB := new(engine_util.WriteBatch)
+	// region相关信息，还有apply信息存到kvDB里了
 	kvWB.SetMeta(meta.PrepareBootstrapKey, state)
 	kvWB.SetMeta(meta.RegionStateKey(region.Id), state)
 	writeInitialApplyState(kvWB, region.Id)

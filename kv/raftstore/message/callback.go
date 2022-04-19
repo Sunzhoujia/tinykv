@@ -24,6 +24,7 @@ func (cb *Callback) Done(resp *raft_cmdpb.RaftCmdResponse) {
 }
 
 func (cb *Callback) WaitResp() *raft_cmdpb.RaftCmdResponse {
+
 	select {
 	case <-cb.done:
 		return cb.Resp

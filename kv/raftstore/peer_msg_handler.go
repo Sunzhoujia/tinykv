@@ -1,6 +1,8 @@
 package raftstore
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"time"
 
@@ -43,16 +45,38 @@ func (d *peerMsgHandler) HandleRaftReady() {
 		return
 	}
 	// Your Code Here (2B).
+	peer := d.peer
+	ctx := d.ctx
+	if peer.RaftGroup.HasReady() {
+		ready := peer.RaftGroup.Ready()
+		// 将raftState， log entries，snapshot 持久化（暂时不考虑snapshot）
+		peer.peerStorage.SaveReadyState(&ready)
+
+		// 将该发送的消息发送出去
+		if len(ready.Messages) > 0 {
+			peer.Send(ctx.trans, ready.Messages)
+		}
+		// 对消息commit的entry进行apply
+		if len(ready.CommittedEntries) > 0 {
+			//log.Infof("commit entries %v", ready.CommittedEntries)
+
+			peer.applyEntries(ready.CommittedEntries)
+		}
+		// advance
+		peer.RaftGroup.Advance(ready)
+	}
 }
 
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
 	switch msg.Type {
 	case message.MsgTypeRaftMessage:
+		//log.Info("%x handle raftMsg %v", d.peer.Meta.Id, msg)
 		raftMsg := msg.Data.(*rspb.RaftMessage)
 		if err := d.onRaftMsg(raftMsg); err != nil {
 			log.Errorf("%s handle raft message error %v", d.Tag, err)
 		}
 	case message.MsgTypeRaftCmd:
+		//log.Info("%x handle raftCmd %v", d.peer.Meta.Id, msg)
 		raftCMD := msg.Data.(*message.MsgRaftCmd)
 		d.proposeRaftCommand(raftCMD.Request, raftCMD.Callback)
 	case message.MsgTypeTick:
@@ -71,6 +95,7 @@ func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
 	}
 }
 
+// check storeID, peerID, Term...
 func (d *peerMsgHandler) preProposeRaftCommand(req *raft_cmdpb.RaftCmdRequest) error {
 	// Check store_id, make sure that the msg is dispatched to the right place.
 	if err := util.CheckStoreID(req, d.storeID()); err != nil {
@@ -114,13 +139,31 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 		return
 	}
 	// Your Code Here (2B).
+
+	// construct proposal and put it into peer
+	peer := d.peer
+	proposal := &proposal{index: peer.nextProposalIndex(), term: peer.Term(), cb: cb}
+	peer.proposals = append(peer.proposals, proposal)
+	log.Infof("peer %x proposal %v", peer.PeerId(), peer.proposals[0])
+	// Encode reqs
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	for _, req := range msg.Requests {
+		if err := enc.Encode(*req); err != nil {
+			log.Panicf("Encode error : %v", err)
+		}
+	}
+	if err = peer.RaftGroup.Propose(buf.Bytes()); err != nil {
+		log.Panicf("Error when propose raftcmd")
+	}
+
 }
 
 func (d *peerMsgHandler) onTick() {
 	if d.stopped {
 		return
 	}
-	d.ticker.tickClock()
+	d.ticker.tickClock() // tick++
 	if d.ticker.isOnTick(PeerTickRaft) {
 		d.onRaftBaseTick()
 	}
@@ -145,6 +188,7 @@ func (d *peerMsgHandler) startTicker() {
 	d.ticker.schedule(PeerTickSchedulerHeartbeat)
 }
 
+// 触发raftGroup的tick，驱动raft状态机。同时设置下一次触发时间
 func (d *peerMsgHandler) onRaftBaseTick() {
 	d.RaftGroup.Tick()
 	d.ticker.schedule(PeerTickRaft)
@@ -175,6 +219,7 @@ func (d *peerMsgHandler) onRaftMsg(msg *rspb.RaftMessage) error {
 		d.handleGCPeerMsg(msg)
 		return nil
 	}
+	// 检查 msg 是否发给该peer
 	if d.checkMessage(msg) {
 		return nil
 	}

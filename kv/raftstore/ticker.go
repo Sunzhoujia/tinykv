@@ -8,14 +8,14 @@ import (
 )
 
 type ticker struct {
-	regionID  uint64
-	tick      int64
+	regionID  uint64 // 每个region都有一个tick负责
+	tick      int64  // 当前时间
 	schedules []tickSchedule
 }
 
 type tickSchedule struct {
-	runAt    int64
-	interval int64
+	runAt    int64 // 下一次触发的tick时间
+	interval int64 // 触发间隔
 }
 
 func newTicker(regionID uint64, cfg *config.Config) *ticker {
@@ -24,6 +24,7 @@ func newTicker(regionID uint64, cfg *config.Config) *ticker {
 		regionID:  regionID,
 		schedules: make([]tickSchedule, 6),
 	}
+	// 初始化不同事件的触发间隔
 	t.schedules[int(PeerTickRaft)].interval = 1
 	t.schedules[int(PeerTickRaftLogGC)].interval = int64(cfg.RaftLogGCTickInterval / baseInterval)
 	t.schedules[int(PeerTickSplitRegionCheck)].interval = int64(cfg.SplitRegionCheckTickInterval / baseInterval)

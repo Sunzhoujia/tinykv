@@ -1,0 +1,2271 @@
+GO111MODULE=on go test -v --count=1 --parallel=1 -p=1 ./kv/test_raftstore -run ^TestBasic2B|| true
+=== RUN   TestBasic2B
+--- PASS: TestBasic2B (23.67s)
+PASS
+ok  	github.com/pingcap-incubator/tinykv/kv/test_raftstore	23.719s
+GO111MODULE=on go test -v --count=1 --parallel=1 -p=1 ./kv/test_raftstore -run ^TestConcurrent2B|| true
+=== RUN   TestConcurrent2B
+--- PASS: TestConcurrent2B (34.67s)
+PASS
+ok  	github.com/pingcap-incubator/tinykv/kv/test_raftstore	34.745s
+GO111MODULE=on go test -v --count=1 --parallel=1 -p=1 ./kv/test_raftstore -run ^TestUnreliable2B|| true
+=== RUN   TestUnreliable2B
+--- PASS: TestUnreliable2B (27.43s)
+PASS
+ok  	github.com/pingcap-incubator/tinykv/kv/test_raftstore	27.484s
+GO111MODULE=on go test -v --count=1 --parallel=1 -p=1 ./kv/test_raftstore -run ^TestOnePartition2B|| true
+=== RUN   TestOnePartition2B
+panic: test timed out after 10m0s
+
+goroutine 307 [running]:
+testing.(*M).startAlarm.func1()
+	/usr/local/go/src/testing/testing.go:1700 +0xe5
+created by time.goFunc
+	/usr/local/go/src/time/sleep.go:180 +0x45
+
+goroutine 1 [chan receive, 9 minutes]:
+testing.(*T).Run(0xc000001e00, 0xbf790c, 0x12, 0xc227b8, 0x49ca01)
+	/usr/local/go/src/testing/testing.go:1239 +0x2da
+testing.runTests.func1(0xc000001c80)
+	/usr/local/go/src/testing/testing.go:1511 +0x78
+testing.tRunner(0xc000001c80, 0xc000207de0)
+	/usr/local/go/src/testing/testing.go:1193 +0xef
+testing.runTests(0xc00000f830, 0x1229f80, 0x20, 0x20, 0xc08fc43a851f0e1e, 0x8bb3214192, 0x1277740, 0xbf46e2)
+	/usr/local/go/src/testing/testing.go:1509 +0x2fe
+testing.(*M).Run(0xc000154a80, 0x0)
+	/usr/local/go/src/testing/testing.go:1417 +0x1eb
+main.main()
+	_testmain.go:105 +0x138
+
+goroutine 10 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/raftstore/message.(*Callback).WaitResp(0xc000114ea0, 0x8)
+	/home/goer/tinykv/kv/raftstore/message/callback.go:31 +0x3c
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*NodeSimulator).CallCommandOnStore(0xc000256ac0, 0x5, 0xc00007d040, 0x3b9aca00, 0x396f912d, 0x17204bad0082)
+	/home/goer/tinykv/kv/test_raftstore/node.go:221 +0x1e9
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).CallCommand(0xc00007d4a0, 0xc00007d040, 0x3b9aca00, 0xc08fc3a4b96f8e6a, 0x34a8519f)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:210 +0x58
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).CallCommandOnLeader(0xc00007d4a0, 0xc00007d040, 0x12a05f200, 0x2, 0xc15104f200)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:225 +0x129
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).Request(0xc00007d4a0, 0xc021710c38, 0x2, 0x2, 0xc0000aa508, 0x1, 0x1, 0x12a05f200, 0x4194db, 0xc00010fe00)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:191 +0x2ad
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).GetCF(0xc00007d4a0, 0xbefd86, 0x7, 0xc021710c38, 0x2, 0x2, 0x256a80, 0xc23690, 0xc021726400)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:331 +0x154
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).Get(...)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:326
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).MustGet(0xc00007d4a0, 0xc021710c38, 0x2, 0x2, 0xc021710c3a, 0x2, 0x2)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:319 +0x7d
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.TestOnePartition2B(0xc000001e00)
+	/home/goer/tinykv/kv/test_raftstore/test_test.go:408 +0x878
+testing.tRunner(0xc000001e00, 0xc227b8)
+	/usr/local/go/src/testing/testing.go:1193 +0xef
+created by testing.(*T).Run
+	/usr/local/go/src/testing/testing.go:1238 +0x2b3
+
+goroutine 14 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0000ac060)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 15 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc00428e120)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 16 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc0000108c0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 50 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc00022cd80, 0xc0000a0180)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 66 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc00015a000, 0xc000114000)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 67 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc00017c680, 0xc0001145a0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 68 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172000, 0xc0001145b8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 69 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172000, 0xc0001145b8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 70 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172000, 0xc0001145b8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 71 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc00022cd80, 0xc0000a0150, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 82 [select]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc021716040, 0xc02170e018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 76 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc00015b9e0, 0xc00000e0d8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 83 [select]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc021716040, 0xc02170e018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 84 [chan receive, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc021716040, 0xc02170e018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 85 [chan receive]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc021716040, 0xc02170e018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 51 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc021712150)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 52 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc004290240)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 53 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc021700008)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 54 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc00022d200, 0xc00000e228)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 55 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc0042905a0, 0xc00000e258)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 56 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc00017d840, 0xc00000e7e0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 57 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001720c0, 0xc00000e7f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 58 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001720c0, 0xc00000e7f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 59 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001720c0, 0xc00000e7f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 60 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc00022d200, 0xc00000e1f8, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 130 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc00015aa20)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 46 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc000174040, 0xc0000a0018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 65 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0001e1920)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 47 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc000174040, 0xc0000a0018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 48 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc000174040, 0xc0000a0018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 49 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc000174040, 0xc0000a0018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 98 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0001ca1e0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 99 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc00015aba0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 100 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000010038)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 101 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0001da000, 0xc0000a01f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 102 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc00015ade0, 0xc0000a0228)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 103 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc000257b80, 0xc0000a07b0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 104 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001de000, 0xc0000a07c8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 105 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001de000, 0xc0000a07c8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 106 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001de000, 0xc0000a07c8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 107 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0001da000, 0xc0000a01c8, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 31 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc0000d4f00, 0xc02170e630)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 113 [select]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc0001d38c0, 0xc0000a0828)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 30 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc00007b740, 0xc02170e0a8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 112 [select]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc0001d38c0, 0xc0000a0828)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 114 [chan receive, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc0001d38c0, 0xc0000a0828)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 115 [chan receive]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc0001d38c0, 0xc0000a0828)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 131 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000010290)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 132 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0001da480, 0xc0000a0270)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 133 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc00015b1a0, 0xc0000a02a0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 134 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc0001bc5c0, 0xc0000a0870)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 135 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001de0c0, 0xc0000a0888)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 136 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001de0c0, 0xc0000a0888)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 137 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001de0c0, 0xc0000a0888)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 138 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0001da480, 0xc0000a0240, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 196 [chan receive, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc00027f760, 0xc0000a8048)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 144 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc021717060, 0xc0000a0900)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 195 [select]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc00027f760, 0xc0000a8048)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 143 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc021717060, 0xc0000a0900)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 145 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc021717060, 0xc0000a0900)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 146 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc021717060, 0xc0000a0900)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 147 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0001bf020)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 148 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc00015bc80)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 149 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000010448)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 150 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0001da900, 0xc0000a0a98)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 32 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172180, 0xc02170e648)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 33 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172180, 0xc02170e648)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 162 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172180, 0xc02170e648)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 163 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0001da900, 0xc0000a0a68, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 180 [chan receive, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc0042a8020, 0xc0000a8018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 169 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc0001ffdc0, 0xc02170e690)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 179 [select]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc0042a8020, 0xc0000a8018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 178 [select]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc0042a8020, 0xc0000a8018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 181 [chan receive]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc0042a8020, 0xc0000a8018)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 182 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0042aa120)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 183 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc02170d0e0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 184 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000268008)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 185 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0000c0900, 0xc0000a81b0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 116 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc0042908a0, 0xc0001140f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 117 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc0001feec0, 0xc0001146a8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 118 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000192000, 0xc0001146c0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 119 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000192000, 0xc0001146c0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 120 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000192000, 0xc0001146c0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 121 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0000c0900, 0xc0000a8180, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 186 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc0042b8120, 0xc0000a81f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 168 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc004290ae0, 0xc02170e0d8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 187 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc0042b8120, 0xc0000a81f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 188 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc0042b8120, 0xc0000a81f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 189 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc0042b8120, 0xc0000a81f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 151 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0000dc120)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 152 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc00007baa0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 153 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc0002680b0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 154 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0000c0000, 0xc000114288)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 170 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172240, 0xc02170e6a8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 171 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172240, 0xc02170e6a8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 172 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172240, 0xc02170e6a8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 173 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0000c0000, 0xc000114258, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 228 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc0042b9100, 0xc02170e708)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 229 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc0042b9100, 0xc02170e708)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 227 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc0042b9100, 0xc02170e708)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 194 [select]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc00027f760, 0xc0000a8048)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 197 [chan receive]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc00027f760, 0xc0000a8048)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 198 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0001b0030)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 199 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc00428ec60)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 200 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000010300)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 201 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0001dad80, 0xc0000a8258)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 77 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc0042a5180, 0xc00000e780)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 78 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001920c0, 0xc00000e798)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 79 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001920c0, 0xc00000e798)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 80 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001920c0, 0xc00000e798)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 81 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0001dad80, 0xc0000a8228, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 226 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc0042b9100, 0xc02170e708)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 230 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0000ea1e0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 231 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc004291440)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 232 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc0217000f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 233 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc00022d680, 0xc02170e8a0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 202 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc00428f140, 0xc0000a82d0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 203 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc0001bda80, 0xc0000a8858)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 204 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001de240, 0xc0000a8870)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 205 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001de240, 0xc0000a8870)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 206 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001de240, 0xc0000a8870)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 207 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc00022d680, 0xc02170e870, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 234 [select]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc0216ab200, 0xc02170e8e8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 235 [select]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc0216ab200, 0xc02170e8e8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 236 [chan receive, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc0216ab200, 0xc02170e8e8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 237 [chan receive]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc0216ab200, 0xc02170e8e8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 238 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0216ada70)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 239 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc004291bc0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 240 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc0217001a0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 241 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc00022db00, 0xc02170ea80)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 258 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc004291ec0, 0xc02170eab0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 259 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc147cbd2c0, 0xc02170f038)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 260 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172300, 0xc02170f050)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 261 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172300, 0xc02170f050)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 262 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc000172300, 0xc02170f050)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 263 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc00022db00, 0xc02170ea50, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 268 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc147ce62a0, 0xc02170f0b0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 269 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc147ce62a0, 0xc02170f0b0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 270 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc147ce62a0, 0xc02170f0b0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 271 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc147ce62a0, 0xc02170f0b0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 272 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc147ce6540, 0xc00003b1a0, 0xc0001949c0)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:38 +0x405
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 273 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc147ce87f0, 0xc00003b1a0, 0xc0001949c0)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 274 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147cca330, 0xcad860, 0xc147ce6560)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 275 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147cca360, 0xcad840, 0xc0217003c0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 276 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147cca390, 0xcad820, 0xc0217003c8)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 277 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147cca3c0, 0xcad800, 0xc147cca870)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 278 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc147cca210)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+
+goroutine 279 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc147ce6600, 0xc00003b2c0, 0xc000194d90)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:38 +0x405
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 280 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc147ce88c0, 0xc00003b2c0, 0xc000194d90)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 281 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccaa20, 0xcad860, 0xc147ce6620)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 282 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccaa50, 0xcad840, 0xc021700418)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 283 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccaa80, 0xcad820, 0xc021700420)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 284 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccaab0, 0xcad800, 0xc147ccae70)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 285 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc147cca900)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+
+goroutine 286 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc147ce66c0, 0xc00003b3e0, 0xc000195090)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:38 +0x405
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 287 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc147ce8990, 0xc00003b3e0, 0xc000195090)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 288 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccb020, 0xcad860, 0xc147ce66e0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 289 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccb050, 0xcad840, 0xc021700470)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 290 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccb080, 0xcad820, 0xc021700478)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 291 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccb0b0, 0xcad800, 0xc147ccb470)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 292 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc147ccaf00)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+
+goroutine 293 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc147ce6780, 0xc00003b500, 0xc000195390)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:38 +0x405
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 294 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc147ce8a60, 0xc00003b500, 0xc000195390)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 295 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccb620, 0xcad860, 0xc147ce67a0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 296 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccb650, 0xcad840, 0xc0217004c8)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 297 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccb680, 0xcad820, 0xc0217004d0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 298 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccb6b0, 0xcad800, 0xc147ccba70)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 299 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc147ccb500)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+
+goroutine 300 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc147ce6840, 0xc00003b620, 0xc000195690)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:38 +0x405
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 301 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc147ce8b30, 0xc00003b620, 0xc000195690)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 302 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccbc20, 0xcad860, 0xc147ce6860)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 303 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccbc50, 0xcad840, 0xc021700520)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 304 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccbc80, 0xcad820, 0xc021700528)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 305 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc147ccbcb0, 0xcad800, 0xc17be36090)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 306 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc147ccbb00)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+FAIL	github.com/pingcap-incubator/tinykv/kv/test_raftstore	600.030s
+FAIL
+GO111MODULE=on go test -v --count=1 --parallel=1 -p=1 ./kv/test_raftstore -run ^TestManyPartitionsOneClient2B|| true
+=== RUN   TestManyPartitionsOneClient2B
+panic: test timed out after 10m0s
+
+goroutine 296 [running]:
+testing.(*M).startAlarm.func1()
+	/usr/local/go/src/testing/testing.go:1700 +0xe5
+created by time.goFunc
+	/usr/local/go/src/time/sleep.go:180 +0x45
+
+goroutine 1 [chan receive, 10 minutes]:
+testing.(*T).Run(0xc000092600, 0xbffa80, 0x1d, 0xc227b0, 0x49ca01)
+	/usr/local/go/src/testing/testing.go:1239 +0x2da
+testing.runTests.func1(0xc000092480)
+	/usr/local/go/src/testing/testing.go:1511 +0x78
+testing.tRunner(0xc000092480, 0xc0000ffde0)
+	/usr/local/go/src/testing/testing.go:1193 +0xef
+testing.runTests(0xc0000a1698, 0x1229f80, 0x20, 0x20, 0xc08fc4d0e328ce95, 0x8bb315b17c, 0x1277740, 0xbf46e2)
+	/usr/local/go/src/testing/testing.go:1509 +0x2fe
+testing.(*M).Run(0xc0000b2a00, 0x0)
+	/usr/local/go/src/testing/testing.go:1417 +0x1eb
+main.main()
+	_testmain.go:105 +0x138
+
+goroutine 19 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.GenericTest(0xc000092600, 0xbecbcd, 0x2, 0x1, 0x62010000, 0xffffffffffffffff, 0x17ac23cc0000)
+	/home/goer/tinykv/kv/test_raftstore/test_test.go:272 +0xcb9
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.TestManyPartitionsOneClient2B(0xc000092600)
+	/home/goer/tinykv/kv/test_raftstore/test_test.go:422 +0x65
+testing.tRunner(0xc000092600, 0xc227b0)
+	/usr/local/go/src/testing/testing.go:1193 +0xef
+created by testing.(*T).Run
+	/usr/local/go/src/testing/testing.go:1238 +0x2b3
+
+goroutine 25 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc00007e5a0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 26 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc00007a360)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 27 [select, 10 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc0000aa7b0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 28 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc000142480, 0xc00000e1f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 9 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc0000dc060, 0xc0000a0000)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 10 [select, 10 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc00003f440, 0xc0000a0588)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 11 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c000, 0xc0000a05a0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 12 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c000, 0xc0000a05a0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 13 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c000, 0xc0000a05a0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 14 [chan receive, 10 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc000142480, 0xc00000e1c8, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 84 [chan receive, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc00022e020, 0xc00009a000)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 68 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc000264060)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 83 [select]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc00022e020, 0xc00009a000)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 82 [select]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc00022e020, 0xc00009a000)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 85 [runnable]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc00022e020, 0xc00009a000)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 69 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc0000942a0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 70 [select, 10 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000232000)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 71 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc000142900, 0xc00009a198)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 72 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc000094540, 0xc00009a1c8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 73 [select, 10 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc000270dc0, 0xc00009a750)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 74 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c0c0, 0xc00009a768)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 75 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c0c0, 0xc00009a768)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 76 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c0c0, 0xc00009a768)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 77 [chan receive, 10 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc000142900, 0xc00009a168, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 100 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc00019f340, 0xc00009a7c8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 101 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc00019f340, 0xc00009a7c8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 99 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc00019f340, 0xc00009a7c8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 98 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc00019f340, 0xc00009a7c8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 102 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc000175f50)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 103 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc0001ba2a0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 104 [select, 10 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc0002320e0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 105 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc000235b00, 0xc0000a0198)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 106 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc0001ba4e0, 0xc0000a01c8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 107 [select, 10 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc000271f80, 0xc0000a0780)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 108 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c180, 0xc0000a0798)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 109 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c180, 0xc0000a0798)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 110 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c180, 0xc0000a0798)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 111 [chan receive, 10 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc000235b00, 0xc0000a0168, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 132 [chan receive, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc000154020, 0xc000186048)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 119 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc0000a8140, 0xc00009a090)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 131 [select]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc000154020, 0xc000186048)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 130 [select]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc000154020, 0xc000186048)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 133 [chan receive]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc000154020, 0xc000186048)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 134 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc000156120)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 135 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc00007ad80)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 136 [select, 10 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000232088)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 137 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0000c4000, 0xc0001861e0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 29 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc0000bccc0, 0xc00009a078)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 30 [select, 10 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc0001aaec0, 0xc00009a660)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 31 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001ac000, 0xc00009a678)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 32 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001ac000, 0xc00009a678)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 33 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001ac000, 0xc00009a678)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 146 [chan receive, 10 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0000c4000, 0xc0001861b0, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 153 [select, 10 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000232178)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 138 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc02a1ae120, 0xc000186228)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 152 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc0000bd380)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 151 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0933be2d0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 139 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc02a1ae120, 0xc000186228)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 140 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc02a1ae120, 0xc000186228)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 141 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc02a1ae120, 0xc000186228)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 154 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0933e0000, 0xc00009a8b8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 155 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc0000bd6e0, 0xc00009a900)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 56 [select, 10 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc000158540, 0xc00000e678)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 57 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001ac0c0, 0xc00000e690)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 58 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001ac0c0, 0xc00000e690)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 59 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001ac0c0, 0xc00000e690)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 60 [chan receive, 10 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0933e0000, 0xc00009a888, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 163 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc00017b000, 0xc00000e6f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 164 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc00017b000, 0xc00000e6f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 162 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc00017b000, 0xc00000e6f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 65 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc00017b000, 0xc00000e6f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 165 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0001d6840)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 166 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc0000dd5c0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 167 [select, 10 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000010170)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 168 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc000235680, 0xc00000e888)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 178 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc000114480, 0xc0001860a8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 179 [select, 10 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc02a1d8e40, 0xc0001866d8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 180 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c240, 0xc0001866f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 181 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c240, 0xc0001866f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 182 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c240, 0xc0001866f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 183 [chan receive, 10 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc000235680, 0xc00000e858, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 118 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc0000a8140, 0xc00009a090)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 188 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc000114900, 0xc000186750)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 117 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc0000a8140, 0xc00009a090)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 116 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc0000a8140, 0xc00009a090)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 120 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc02a1c01e0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 121 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc00007bb60)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 122 [select, 10 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc00019a0b0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 123 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0000c4480, 0xc00009a288)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 189 [select, 10 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc02a1d9dc0, 0xc000186d20)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 190 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c300, 0xc000186d38)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 191 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c300, 0xc000186d38)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 192 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c300, 0xc000186d38)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 193 [chan receive, 10 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0000c4480, 0xc00009a258, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 171 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc0001cc6c0, 0xc00000e8d0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 199 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc02a1fc020, 0xc000186d98)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 170 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc0001cc6c0, 0xc00000e8d0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 169 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc0001cc6c0, 0xc00000e8d0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 172 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc0001cc6c0, 0xc00000e8d0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 173 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc0001f40f0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 174 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc0000dde60)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 175 [select, 10 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc000010218)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 176 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc0933e0480, 0xc00000ea68)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 156 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc0001bacc0, 0xc0000a00d8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 157 [select, 10 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc0933e6ec0, 0xc0000a07e0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 158 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc08a06e0c0, 0xc0000a07f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 159 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc08a06e0c0, 0xc0000a07f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 160 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc08a06e0c0, 0xc0000a07f8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 161 [chan receive, 10 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc0933e0480, 0xc00000ea38, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 198 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc02a1fc020, 0xc000186d98)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 200 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc02a1fc020, 0xc000186d98)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 201 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc02a1fc020, 0xc000186d98)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 202 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc02a1f0720)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 203 [select, 10 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc0001151a0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 204 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc0002321d8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 205 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc000142d80, 0xc000186f30)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 142 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc0000bdce0, 0xc08a07c048)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 124 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc12b28a9c0, 0xc000186468)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 125 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001ac180, 0xc000186480)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 126 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001ac180, 0xc000186480)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 127 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc0001ac180, 0xc000186480)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 128 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc000142d80, 0xc000186f00, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 242 [select]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc0933ee060, 0xc0000a00f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 177 [select]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc0933ee060, 0xc0000a00f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 243 [runnable, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc0933ee060, 0xc0000a00f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 244 [chan receive]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc0933ee060, 0xc0000a00f0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 245 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*defaultPolicy).processItems(0xc000177a40)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:96 +0xa5
+created by github.com/dgraph-io/ristretto.newDefaultPolicy
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/policy.go:80 +0x129
+
+goroutine 246 [select, 9 minutes]:
+github.com/dgraph-io/ristretto.(*Cache).processItems(0xc0001bb2c0)
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:250 +0x9d
+created by github.com/dgraph-io/ristretto.NewCache
+	/home/gopath/pkg/mod/github.com/dgraph-io/ristretto@v0.0.0-20191010170704-2ba187ef9534/cache.go:152 +0x205
+
+goroutine 247 [select, 9 minutes]:
+github.com/Connor1996/badger.Open.func4(0xc0000aa008)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:290 +0x159
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:287 +0xd88
+
+goroutine 248 [select]:
+github.com/Connor1996/badger.(*DB).updateSize(0xc000143200, 0xc0000a02e8)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:1024 +0x108
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:302 +0xe5e
+
+goroutine 249 [select]:
+github.com/Connor1996/badger/epoch.(*ResourceManager).collectLoop(0xc0001bb560, 0xc0000a0318)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:100 +0xdc
+created by github.com/Connor1996/badger/epoch.NewResourceManager
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/epoch/manager.go:78 +0x85
+
+goroutine 250 [select, 9 minutes]:
+github.com/Connor1996/badger.(*blobGCHandler).run(0xc000088340, 0xc0000a0f48)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:467 +0xd4
+created by github.com/Connor1996/badger.(*blobManager).Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/blob.go:291 +0x618
+
+goroutine 251 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c3c0, 0xc0000a0f60)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 252 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c3c0, 0xc0000a0f60)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 253 [select]:
+github.com/Connor1996/badger.(*levelsController).runWorker(0xc00016c3c0, 0xc0000a0f60)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:198 +0x158
+created by github.com/Connor1996/badger.(*levelsController).startCompact
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/levels.go:183 +0x88
+
+goroutine 254 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*DB).runFlushMemTable(0xc000143200, 0xc0000a02b8, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:905 +0xf3
+created by github.com/Connor1996/badger.Open
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/db.go:321 +0x15f0
+
+goroutine 259 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc02a1af820, 0xc0933e4600, 0xc0933e8300)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:38 +0x405
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 86 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runFlusher(0xc0affec060, 0xc00000e138)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:72 +0xf0
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:61 +0x226
+
+goroutine 87 [select, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runWriteVLog(0xc0affec060, 0xc00000e138)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:93 +0x1dc
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:63 +0x193
+
+goroutine 88 [chan receive, 9 minutes, locked to thread]:
+github.com/Connor1996/badger.(*writeWorker).runWriteLSM(0xc0affec060, 0xc00000e138)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:139 +0x195
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:64 +0x1bf
+
+goroutine 89 [chan receive, 9 minutes]:
+github.com/Connor1996/badger.(*writeWorker).runMergeLSM(0xc0affec060, 0xc00000e138)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:152 +0xad
+created by github.com/Connor1996/badger.startWriteWorker
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/writer.go:65 +0x1eb
+
+goroutine 260 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc02a1bfa60, 0xc0933e4600, 0xc0933e8300)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 261 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0001e9590, 0xcad860, 0xc02a1af840)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 262 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0001e95c0, 0xcad840, 0xc0000aa630)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 263 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0001e95f0, 0xcad820, 0xc0000aa658)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 264 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0001e9620, 0xcad800, 0xc0001e9ad0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 265 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc0001e9470)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+
+goroutine 266 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc02a1af8e0, 0xc0933e4720, 0xc0933e86d0)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:38 +0x405
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 267 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc02a1bfb30, 0xc0933e4720, 0xc0933e86d0)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 268 [runnable]:
+github.com/pingcap-incubator/tinykv/kv/raftstore/runner.(*sizeSplitChecker).onKv(0xc0933fe0c0, 0xc08a083b8a, 0xa, 0x4995dd6, 0xcbdab8, 0xd09a774b50, 0x0)
+	/home/goer/tinykv/kv/raftstore/runner/split_checker.go:118 +0x130
+github.com/pingcap-incubator/tinykv/kv/raftstore/runner.(*splitCheckHandler).splitCheck(0xc02a1af900, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, ...)
+	/home/goer/tinykv/kv/raftstore/runner/split_checker.go:91 +0x3b6
+github.com/pingcap-incubator/tinykv/kv/raftstore/runner.(*splitCheckHandler).Handle(0xc02a1af900, 0xae3ee0, 0xd093e82f20)
+	/home/goer/tinykv/kv/raftstore/runner/split_checker.go:47 +0x38c
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0001e9c80, 0xcad860, 0xc02a1af900)
+	/home/goer/tinykv/kv/util/worker/worker.go:37 +0xbf
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 269 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0001e9cb0, 0xcad840, 0xc0000aa740)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 270 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0001e9ce0, 0xcad820, 0xc0000aa748)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 271 [runnable]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0001e9d10, 0xcad800, 0xc0933fe0f0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 272 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc0001e9b60)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+
+goroutine 273 [runnable]:
+github.com/pingcap-incubator/tinykv/kv/raftstore/meta.makeRegionKey(0x1, 0xd09cdc2d01, 0xd117cd3, 0xd09cdbd908, 0x13, 0x13)
+	/home/goer/tinykv/kv/raftstore/meta/keys.go:60 +0x91
+github.com/pingcap-incubator/tinykv/kv/raftstore/meta.RaftLogKey(...)
+	/home/goer/tinykv/kv/raftstore/meta/keys.go:79
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*PeerStorage).Append(0xc0933d29b0, 0xc1b0d1deb0, 0x2, 0x4, 0xc12b29da18, 0x0, 0x0)
+	/home/goer/tinykv/kv/raftstore/peer_storage.go:321 +0xa5
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*PeerStorage).SaveReadyState(0xc0933d29b0, 0xc182ee9ee0, 0xc, 0x5, 0x335)
+	/home/goer/tinykv/kv/raftstore/peer_storage.go:363 +0x2e5
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*peerMsgHandler).HandleRaftReady(0xc155a51e28)
+	/home/goer/tinykv/kv/raftstore/peer_msg_handler.go:53 +0x10d
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc02a1af9a0, 0xc0933e4840, 0xc0933e89d0)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:57 +0x346
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 274 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc02a1bfc00, 0xc0933e4840, 0xc0933e89d0)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 275 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fe2a0, 0xcad860, 0xc02a1af9c0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 276 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fe2d0, 0xcad840, 0xc0000aa798)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 277 [chan receive, 9 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fe300, 0xcad820, 0xc0000aa7a0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 278 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fe330, 0xcad800, 0xc0933fe6f0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 279 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc0933fe180)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+
+goroutine 280 [runnable]:
+github.com/pingcap-incubator/tinykv/kv/raftstore/meta.makeRegionKey(0x1, 0xd09cd34601, 0xc310fbc, 0xd09cd2f4b8, 0x13, 0x13)
+	/home/goer/tinykv/kv/raftstore/meta/keys.go:60 +0x91
+github.com/pingcap-incubator/tinykv/kv/raftstore/meta.RaftLogKey(...)
+	/home/goer/tinykv/kv/raftstore/meta/keys.go:79
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*PeerStorage).Append(0xc0933d2b40, 0xc1832c7eb0, 0x1, 0x4, 0xc00010fa18, 0x0, 0x0)
+	/home/goer/tinykv/kv/raftstore/peer_storage.go:321 +0xa5
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*PeerStorage).SaveReadyState(0xc0933d2b40, 0xc182a7dc70, 0x7, 0x0, 0x335)
+	/home/goer/tinykv/kv/raftstore/peer_storage.go:363 +0x2e5
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*peerMsgHandler).HandleRaftReady(0xc17c36be28)
+	/home/goer/tinykv/kv/raftstore/peer_msg_handler.go:53 +0x10d
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc02a1afa60, 0xc0933e4960, 0xc0933e8cd0)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:57 +0x346
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 281 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc02a1bfcd0, 0xc0933e4960, 0xc0933e8cd0)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 282 [chan receive, 10 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fe8a0, 0xcad860, 0xc02a1afa80)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 283 [chan receive, 10 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fe8d0, 0xcad840, 0xc0000aa810)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 284 [chan receive, 10 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fe900, 0xcad820, 0xc0000aa818)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 285 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fe930, 0xcad800, 0xc0933fecf0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 286 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc0933fe780)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+
+goroutine 287 [semacquire]:
+sync.runtime_Semacquire(0xc1510447e0)
+	/usr/local/go/src/runtime/sema.go:56 +0x45
+sync.(*WaitGroup).Wait(0xc1510447d8)
+	/usr/local/go/src/sync/waitgroup.go:130 +0x65
+github.com/Connor1996/badger.(*request).Wait(0xc1510447c0, 0xd09a375b30, 0x2)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/value.go:491 +0x35
+github.com/Connor1996/badger.(*Txn).Commit(0xd09a366f30, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/transaction.go:490 +0x59a
+github.com/Connor1996/badger.(*DB).Update(0xc000142d80, 0xc00010b968, 0x0, 0x0)
+	/home/gopath/pkg/mod/github.com/!connor1996/badger@v1.5.1-0.20210202034640-5ff470f827f8/transaction.go:562 +0xcb
+github.com/pingcap-incubator/tinykv/kv/util/engine_util.(*WriteBatch).WriteToDB(0xc00010ba18, 0xc000142d80, 0xb, 0xb)
+	/home/goer/tinykv/kv/util/engine_util/write_batch.go:76 +0x70
+github.com/pingcap-incubator/tinykv/kv/util/engine_util.(*Engines).WriteRaft(...)
+	/home/goer/tinykv/kv/util/engine_util/engines.go:37
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*PeerStorage).SaveReadyState(0xc0933d2cd0, 0xd09ce00340, 0xc00010bca8, 0x0, 0x0)
+	/home/goer/tinykv/kv/raftstore/peer_storage.go:374 +0x1d5
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*peerMsgHandler).HandleRaftReady(0xc00010be28)
+	/home/goer/tinykv/kv/raftstore/peer_msg_handler.go:53 +0x10d
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc02a1afb20, 0xc0933e4a80, 0xc0933e8fd0)
+	/home/goer/tinykv/kv/raftstore/raft_worker.go:57 +0x346
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:278 +0xe6
+
+goroutine 288 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*storeWorker).run(0xc02a1bfda0, 0xc0933e4a80, 0xc0933e8fd0)
+	/home/goer/tinykv/kv/raftstore/store_worker.go:60 +0x117
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:282 +0x16a
+
+goroutine 289 [chan receive, 8 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933feea0, 0xcad860, 0xc02a1afb40)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 290 [chan receive, 10 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933feed0, 0xcad840, 0xc0000aa868)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 291 [chan receive, 10 minutes]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fef00, 0xcad820, 0xc0000aa870)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 292 [chan receive]:
+github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start.func1(0xc0933fef30, 0xcad800, 0xc0933ff2f0)
+	/home/goer/tinykv/kv/util/worker/worker.go:33 +0xe5
+created by github.com/pingcap-incubator/tinykv/kv/util/worker.(*Worker).Start
+	/home/goer/tinykv/kv/util/worker/worker.go:27 +0x6e
+
+goroutine 293 [select]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*tickDriver).run(0xc0933fed80)
+	/home/goer/tinykv/kv/raftstore/ticker.go:103 +0xaf
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/goer/tinykv/kv/raftstore/raftstore.go:296 +0x528
+
+goroutine 294 [chan receive, 10 minutes]:
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.SpawnClientsAndWait(0xc000092600, 0xc0933e4c00, 0x1, 0xc0933fffb0)
+	/home/goer/tinykv/kv/test_raftstore/test_test.go:42 +0x1af
+created by github.com/pingcap-incubator/tinykv/kv/test_raftstore.GenericTest
+	/home/goer/tinykv/kv/test_raftstore/test_test.go:216 +0xb26
+
+goroutine 295 [chan receive, 10 minutes]:
+github.com/pingcap-incubator/tinykv/kv/raftstore/message.(*Callback).WaitResp(0xc183236d20, 0x8)
+	/home/goer/tinykv/kv/raftstore/message/callback.go:31 +0x3c
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*NodeSimulator).CallCommandOnStore(0xc000270640, 0x4, 0xc18320b590, 0x3b9aca00, 0x243093f7, 0x17ac9c07d152)
+	/home/goer/tinykv/kv/test_raftstore/node.go:221 +0x1e9
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).CallCommand(0xc0000beff0, 0xc18320b590, 0x3b9aca00, 0xc08fc43b64309191, 0x7889989b)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:210 +0x58
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).CallCommandOnLeader(0xc0000beff0, 0xc18320b590, 0x12a05f200, 0x10, 0xc15103a900)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:225 +0x129
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).Request(0xc0000beff0, 0xc183238730, 0xa, 0x10, 0xc182de7c68, 0x1, 0x1, 0x12a05f200, 0xc0000df000, 0x0)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:191 +0x2ad
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.(*Cluster).Scan(0xc0000beff0, 0xc183238730, 0xa, 0x10, 0xc17bb9cdd0, 0xa, 0x20, 0xc183238720, 0xa, 0xbecb73)
+	/home/goer/tinykv/kv/test_raftstore/cluster.go:367 +0x3dc
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.GenericTest.func1(0x0, 0xc000092600)
+	/home/goer/tinykv/kv/test_raftstore/test_test.go:235 +0x9ad
+github.com/pingcap-incubator/tinykv/kv/test_raftstore.runClient(0xc000092600, 0x0, 0xc0933e4c60, 0xc0933fffb0)
+	/home/goer/tinykv/kv/test_raftstore/test_test.go:28 +0xfd
+created by github.com/pingcap-incubator/tinykv/kv/test_raftstore.SpawnClientsAndWait
+	/home/goer/tinykv/kv/test_raftstore/test_test.go:38 +0xb8
+FAIL	github.com/pingcap-incubator/tinykv/kv/test_raftstore	604.196s
+FAIL
+GO111MODULE=on go test -v --count=1 --parallel=1 -p=1 ./kv/test_raftstore -run ^TestManyPartitionsManyClients2B|| true
+=== RUN   TestManyPartitionsManyClients2B

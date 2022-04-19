@@ -95,7 +95,7 @@ func newLog(storage Storage) *RaftLog {
 	// firstIndex前面的就是已经做了snapshot的log，一定applied了
 	raftlog.committed = firstIndex - 1
 	raftlog.applied = firstIndex - 1
-
+	log.Infof("raftLog: firstIndex %d, lastIndex %d, entry %v", raftlog.FirstIndex(), raftlog.LastIndex(), raftlog.entries)
 	return raftlog
 }
 
@@ -143,7 +143,7 @@ func (l *RaftLog) Entries(i uint64) ([]pb.Entry, error) {
 		return nil, ErrCompacted
 	}
 
-	log.Infof("l.entries %v, [%d, %d)", l.entries, i, l.LastIndex()+1)
+	//log.Infof("Entries %v, [%d, %d)", l.entries, i, l.LastIndex()+1)
 	return l.slice(i, l.LastIndex()+1), nil
 }
 
@@ -219,7 +219,7 @@ func (l *RaftLog) slice(lo uint64, hi uint64) []pb.Entry {
 		log.Panicf("raftLog.entries[%d,%d) out of bound [%d,%d]", lo, hi, l.FirstIndex()-1, l.LastIndex())
 	}
 	offset := l.FirstIndex()
-	log.Infof("entries [%d, %d), %v", lo, hi, l.entries[lo-offset:hi-offset])
+	//log.Infof("entries [%d, %d), %v", lo, hi, l.entries[lo-offset:hi-offset])
 	return l.entries[lo-offset : hi-offset]
 }
 

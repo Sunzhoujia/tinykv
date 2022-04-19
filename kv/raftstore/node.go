@@ -63,11 +63,12 @@ func (n *Node) Start(ctx context.Context, engines *engine_util.Engines, trans Tr
 			return err
 		}
 	}
-
+	// 去schedulerClient上注册自己？
 	err = n.schedulerClient.PutStore(ctx, n.store)
 	if err != nil {
 		return err
 	}
+	// 启动raftstore
 	if err = n.startNode(engines, trans, snapMgr); err != nil {
 		return err
 	}

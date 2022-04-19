@@ -106,6 +106,7 @@ type Transport interface {
 
 /// loadPeers loads peers in this store. It scans the db engine, loads all regions and their peers from it
 /// WARN: This store should not be used before initialized.
+// 加载peers，如果db engine存储着之前 peer 信息，那么根据存储的信息加载，否则就新建。
 func (bs *Raftstore) loadPeers() ([]*peer, error) {
 	// Scan region meta to get saved regions.
 	startKey := meta.RegionMetaMinKey
@@ -120,6 +121,7 @@ func (bs *Raftstore) loadPeers() ([]*peer, error) {
 	t := time.Now()
 	kvWB := new(engine_util.WriteBatch)
 	raftWB := new(engine_util.WriteBatch)
+	// 去kv engine遍历RegionLocalState（region信息和peer state），key format：0x01 0x03 region_id 0x01
 	err := kvEngine.View(func(txn *badger.Txn) error {
 		// get all regions from RegionLocalState
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -152,7 +154,7 @@ func (bs *Raftstore) loadPeers() ([]*peer, error) {
 				bs.clearStaleMeta(kvWB, raftWB, localState)
 				continue
 			}
-
+			// 新建peer
 			peer, err := createPeer(storeID, ctx.cfg, ctx.regionTaskSender, ctx.engine, region)
 			if err != nil {
 				return err
@@ -210,6 +212,7 @@ type Raftstore struct {
 	wg         *sync.WaitGroup
 }
 
+// 为store上的所有region都创建一个peer
 func (bs *Raftstore) start(
 	meta *metapb.Store,
 	cfg *config.Config,
@@ -249,14 +252,18 @@ func (bs *Raftstore) start(
 		schedulerClient:      schedulerClient,
 		tickDriverSender:     bs.tickDriver.newRegionCh,
 	}
+	// 加载peer，没有就新建
+	// 这里的region peer是这个store上的所有region的peer（一个region对应一个peer）
 	regionPeers, err := bs.loadPeers()
 	if err != nil {
 		return err
 	}
 
+	// 在router上注册peer
 	for _, peer := range regionPeers {
 		bs.router.register(peer)
 	}
+	// 开启工作线程，负责出来raftcmd，raftmsg等
 	bs.startWorkers(regionPeers)
 	return nil
 }
@@ -265,14 +272,19 @@ func (bs *Raftstore) startWorkers(peers []*peer) {
 	ctx := bs.ctx
 	workers := bs.workers
 	router := bs.router
-	bs.wg.Add(2) // raftWorker, storeWorker
+	bs.wg.Add(2)
+	// raftWorker, storeWorker
 	rw := newRaftWorker(ctx, router)
 	go rw.run(bs.closeCh, bs.wg)
+
+	// storeWorker的工作：持有storeSender，接收与store相关的信息。定期向调度器发心跳，会报store的消息，自身状态
 	sw := newStoreWorker(ctx, bs.storeState)
 	go sw.run(bs.closeCh, bs.wg)
+
 	router.sendStore(message.Msg{Type: message.MsgTypeStoreStart, Data: ctx.store})
 	for i := 0; i < len(peers); i++ {
 		regionID := peers[i].regionId
+		// 这个msg主要是为对应的region初始化一个tick
 		_ = router.send(regionID, message.Msg{RegionID: regionID, Type: message.MsgTypeStart})
 	}
 	engines := ctx.engine
@@ -300,9 +312,10 @@ func (bs *Raftstore) shutDown() {
 	workers.wg.Wait()
 }
 
+// 创建router，raftstore，tickdriver
 func CreateRaftstore(cfg *config.Config) (*RaftstoreRouter, *Raftstore) {
-	storeSender, storeState := newStoreState(cfg)
-	router := newRouter(storeSender)
+	storeSender, storeState := newStoreState(cfg) // chan message.Msg, 发送端给storeSender，接收端给 storeState
+	router := newRouter(storeSender)              // router包括两个ch，peerSender 和 storeSender
 	raftstore := &Raftstore{
 		router:     router,
 		storeState: storeState,

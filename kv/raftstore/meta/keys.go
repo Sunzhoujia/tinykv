@@ -8,6 +8,11 @@ import (
 )
 
 const (
+	// raft_log_key                     0x01 0x02 region_id 0x01 log_idx    raftdb   entry
+	// raft_state_key (hardState)       0x01 0x02 region_id 0x02            raftdb   RaftLocalState
+	// apply_state_key					0x01 0x02 region_id 0x03            kvdb     RaftApplyState
+	// region_state_key					0x01 0x03 region_id 0x01            kvdb     RegionLocalState
+
 	// local is in (0x01, 0x02)
 	LocalPrefix byte = 0x01
 
@@ -16,9 +21,9 @@ const (
 	// construct peer, no need to travel large raft data, so we separate them
 	// with different prefixes.
 	RegionRaftPrefix    byte = 0x02
-	RegionMetaPrefix    byte = 0x03
-	RegionRaftPrefixLen      = 11 // REGION_RAFT_PREFIX_KEY + region_id + suffix
-	RegionRaftLogLen         = 19 // REGION_RAFT_PREFIX_KEY + region_id + suffix + index
+	RegionMetaPrefix    byte = 0x03 // 存 regionx相关信息，peer的state
+	RegionRaftPrefixLen      = 11   // REGION_RAFT_PREFIX_KEY + region_id + suffix
+	RegionRaftLogLen         = 19   // REGION_RAFT_PREFIX_KEY + region_id + suffix + index
 
 	// Following are the suffix after the local prefix.
 	// For region id

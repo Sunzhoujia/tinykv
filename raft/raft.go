@@ -170,12 +170,11 @@ func newRaft(c *Config) *Raft {
 	// Your Code Here (2A).
 	// storage存的是已经持久化的hardstate，snapshot，entries
 	raftlog := newLog(c.Storage)
-	hs, _, err := c.Storage.InitialState()
+	hs, cs, err := c.Storage.InitialState()
+	log.Infof("hardstate: %v", hs)
 	if err != nil {
 		panic(err)
 	}
-
-	peers := c.peers
 
 	r := &Raft{
 		id:               c.ID,
@@ -187,6 +186,8 @@ func newRaft(c *Config) *Raft {
 		heartbeatTimeout: c.HeartbeatTick,
 		electionTimeout:  c.ElectionTick,
 	}
+
+	peers := cs.Nodes
 
 	// 初始化对每个peer的nextIndex和matchIndex
 	for _, p := range peers {
@@ -525,7 +526,7 @@ func (r *Raft) campaign() {
 
 	r.becomeCandidate()
 	term := r.Term
-
+	//log.Infof("quorum %d", r.quorum())
 	if r.quorum() == r.poll(r.id, voteMsg, true) {
 		r.becomeLeader()
 		return

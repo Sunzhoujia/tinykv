@@ -15,6 +15,7 @@ import (
 	"github.com/pingcap-incubator/tinykv/kv/storage"
 	"github.com/pingcap-incubator/tinykv/kv/util/engine_util"
 	"github.com/pingcap-incubator/tinykv/kv/util/worker"
+	"github.com/pingcap-incubator/tinykv/log"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/errorpb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/kvrpcpb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_cmdpb"
@@ -47,6 +48,7 @@ func (re *RegionError) Error() string {
 }
 
 func (rs *RaftStorage) checkResponse(resp *raft_cmdpb.RaftCmdResponse, reqCount int) error {
+	log.Infof("l have received callback %v", resp)
 	if resp.Header.Error != nil {
 		return &RegionError{RequestErr: resp.Header.Error}
 	}
@@ -110,10 +112,12 @@ func (rs *RaftStorage) Write(ctx *kvrpcpb.Context, batch []storage.Modify) error
 		Requests: reqs,
 	}
 	cb := message.NewCallback()
+	
+
 	if err := rs.raftRouter.SendRaftCommand(request, cb); err != nil {
+
 		return err
 	}
-
 	return rs.checkResponse(cb.WaitResp(), len(reqs))
 }
 
