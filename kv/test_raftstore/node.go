@@ -127,6 +127,7 @@ func (t *MockTransport) Send(msg *raft_serverpb.RaftMessage) error {
 	return nil
 }
 
+// 存了集群的node表：storeID-->raftstore.Node, Node可以理解为一个store，包含一堆peers
 type NodeSimulator struct {
 	sync.RWMutex
 
@@ -150,8 +151,9 @@ func (c *NodeSimulator) RunStore(cfg *config.Config, engine *engine_util.Engines
 
 	raftRouter, raftSystem := raftstore.CreateRaftstore(cfg)
 	snapManager := snap.NewSnapManager(cfg.DBPath + "/snap")
+	// 每个node最重要的就是raftstore这个字段
 	node := raftstore.NewNode(raftSystem, cfg, c.schedulerClient)
-
+	// 启动每个节点
 	err := node.Start(ctx, engine, c.trans, snapManager)
 	if err != nil {
 		return err
@@ -206,13 +208,14 @@ func (c *NodeSimulator) CallCommandOnStore(storeID uint64, request *raft_cmdpb.R
 		log.Fatalf("Can not find node %d", storeID)
 	}
 	c.RUnlock()
-
 	cb := message.NewCallback()
 	err := router.SendRaftCommand(request, cb)
+
 	if err != nil {
 		return nil, nil
 	}
 
-	resp := cb.WaitRespWithTimeout(timeout)
+	//resp := cb.WaitRespWithTimeout(timeout)
+	resp := cb.WaitResp()
 	return resp, cb.Txn
 }

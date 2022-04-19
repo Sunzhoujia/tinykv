@@ -54,7 +54,7 @@ func NewCluster(count int, schedulerClient *MockSchedulerClient, simulator Simul
 func (c *Cluster) Start() {
 	ctx := context.TODO()
 	clusterID := c.schedulerClient.GetClusterID(ctx)
-
+	// 为每个store创建kvDB，raftDB
 	for storeID := uint64(1); storeID <= uint64(c.count); storeID++ {
 		dbPath, err := ioutil.TempDir("", "test-raftstore")
 		if err != nil {
@@ -96,7 +96,7 @@ func (c *Cluster) Start() {
 		EndKey:      []byte{},
 		RegionEpoch: regionEpoch,
 	}
-
+	// 为每个store创建peer，并将peer添加到对应的region，然后把store的元数据写入kvDB
 	for storeID, engine := range c.engines {
 		peer := NewPeer(storeID, storeID)
 		firstRegion.Peers = append(firstRegion.Peers, peer)
@@ -105,7 +105,7 @@ func (c *Cluster) Start() {
 			panic(err)
 		}
 	}
-
+	// 往kvDB里写初始化的RegionLocalState（每个region对应哪些peer也会存进去），RaftApplyState
 	for _, engine := range c.engines {
 		raftstore.PrepareBootstrapCluster(engine, firstRegion)
 	}
@@ -114,6 +114,7 @@ func (c *Cluster) Start() {
 		Id:      1,
 		Address: "",
 	}
+	// 创建调度节点，负责key-->region，每个region的peer，所在store等映射，服务于client
 	resp, err := c.schedulerClient.Bootstrap(context.TODO(), store)
 	if err != nil {
 		panic(err)
@@ -122,6 +123,7 @@ func (c *Cluster) Start() {
 		panic(resp.Header.Error)
 	}
 
+	// 在调度节点注册store
 	for storeID, engine := range c.engines {
 		store := &metapb.Store{
 			Id:      storeID,
@@ -133,7 +135,7 @@ func (c *Cluster) Start() {
 		}
 		raftstore.ClearPrepareBootstrapState(engine)
 	}
-
+	// 启动store
 	for storeID := range c.engines {
 		c.StartServer(storeID)
 	}
@@ -163,6 +165,7 @@ func (c *Cluster) StopServer(storeID uint64) {
 	c.simulator.StopStore(storeID)
 }
 
+// 启动storeID对应的那个节点
 func (c *Cluster) StartServer(storeID uint64) {
 	engine := c.engines[storeID]
 	err := c.simulator.RunStore(c.cfg, engine, context.TODO())
@@ -186,6 +189,7 @@ func (c *Cluster) Request(key []byte, reqs []*raft_cmdpb.Request, timeout time.D
 		regionID := region.GetId()
 		req := NewRequest(regionID, region.RegionEpoch, reqs)
 		resp, txn := c.CallCommandOnLeader(&req, timeout)
+		log.Infof("received resp %+v", resp)
 		if resp == nil {
 			// it should be timeouted innerly
 			SleepMS(100)
@@ -197,6 +201,7 @@ func (c *Cluster) Request(key []byte, reqs []*raft_cmdpb.Request, timeout time.D
 		}
 		return resp, txn
 	}
+
 	panic("request timeout")
 }
 
