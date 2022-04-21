@@ -16,6 +16,7 @@ type PartitionFilter struct {
 	s2 []uint64
 }
 
+// 如果msg的To和From都在同一分区，返回false，不在同一分区，返回true
 func (f *PartitionFilter) Before(msg *rspb.RaftMessage) bool {
 	inS1 := false
 	inS2 := false
