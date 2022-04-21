@@ -35,6 +35,7 @@ func (r *regionItem) Less(other btree.Item) bool {
 	return bytes.Compare(left, right) < 0
 }
 
+// key --> regionID --> region
 type storeMeta struct {
 	sync.RWMutex
 	/// region end key -> region ID
@@ -106,7 +107,9 @@ type Transport interface {
 
 /// loadPeers loads peers in this store. It scans the db engine, loads all regions and their peers from it
 /// WARN: This store should not be used before initialized.
-// 加载peers，如果db engine存储着之前 peer 信息，那么根据存储的信息加载，否则就新建。
+// 加载KVDB中所有的RegionLocalState，根据存储的region信息构建peers。
+// 每个region里面存了这个region对应的所有peers(peerID, storeID)
+// 如果读出来的RegionLocalState的peer状态是tombStone，则不创建peer
 func (bs *Raftstore) loadPeers() ([]*peer, error) {
 	// Scan region meta to get saved regions.
 	startKey := meta.RegionMetaMinKey
@@ -170,6 +173,7 @@ func (bs *Raftstore) loadPeers() ([]*peer, error) {
 	if err != nil {
 		return nil, err
 	}
+	// 清理Tombstone状态的peer的数据
 	kvWB.MustWriteToDB(ctx.engine.Kv)
 	raftWB.MustWriteToDB(ctx.engine.Raft)
 
@@ -212,7 +216,7 @@ type Raftstore struct {
 	wg         *sync.WaitGroup
 }
 
-// 为store上的所有region都创建一个peer
+// 为store上的所有region都创建一个peer，然后在router里注册这些不同region的peers。最后为每个peer都启动一堆worker线程，重点关注raftworker
 func (bs *Raftstore) start(
 	meta *metapb.Store,
 	cfg *config.Config,
@@ -263,7 +267,10 @@ func (bs *Raftstore) start(
 	for _, peer := range regionPeers {
 		bs.router.register(peer)
 	}
-	// 开启工作线程，负责出来raftcmd，raftmsg等
+	// 开启工作线程，然后把tickDriver的线程开起来，这个线程主要做两件事：
+	// 1. 驱动store_worker，store_worker定期给schedule client发heartbeat的Task，让schedule client和schedule通信
+	// 2. 驱动store中各个region的peer的 raft 状态机
+	// 至此，集群运行起来了。
 	bs.startWorkers(regionPeers)
 	return nil
 }
@@ -281,24 +288,29 @@ func (bs *Raftstore) startWorkers(peers []*peer) {
 	sw := newStoreWorker(ctx, bs.storeState)
 	go sw.run(bs.closeCh, bs.wg)
 
+	// 分别给raftWorker和storeWorker发送Msg，启动Tick（设置下次超时时间）
+	// 因为tickDriver启动后，定时会给这两个worker发TickMsg，然后worker处理TickMsg时就是检查各自Tick上注册的schedule事件是否有超时的
 	router.sendStore(message.Msg{Type: message.MsgTypeStoreStart, Data: ctx.store})
 	for i := 0; i < len(peers); i++ {
 		regionID := peers[i].regionId
-		// 这个msg主要是为对应的region初始化一个tick
 		_ = router.send(regionID, message.Msg{RegionID: regionID, Type: message.MsgTypeStart})
 	}
+
 	engines := ctx.engine
 	cfg := ctx.cfg
 	workers.splitCheckWorker.Start(runner.NewSplitCheckHandler(engines.Kv, NewRaftstoreRouter(router), cfg))
 	workers.regionWorker.Start(runner.NewRegionTaskHandler(engines, ctx.snapMgr))
 	workers.raftLogGCWorker.Start(runner.NewRaftLogGCTaskHandler())
 	workers.schedulerWorker.Start(runner.NewSchedulerTaskHandler(ctx.store.Id, ctx.schedulerClient, NewRaftstoreRouter(router)))
+	// 开启tickDriver，开始计时
 	go bs.tickDriver.run()
 }
 
 func (bs *Raftstore) shutDown() {
-	close(bs.closeCh)
+	close(bs.closeCh) // 关闭raftWorker和storeWorker
+	log.Infof("wait raft workers")
 	bs.wg.Wait()
+	log.Infof("stop raft workers")
 	bs.tickDriver.stop()
 	if bs.workers == nil {
 		return
@@ -310,6 +322,7 @@ func (bs *Raftstore) shutDown() {
 	workers.raftLogGCWorker.Stop()
 	workers.schedulerWorker.Stop()
 	workers.wg.Wait()
+	log.Infof("stop all workers")
 }
 
 // 创建router，raftstore，tickdriver

@@ -1,3 +1,0 @@
-testing: warning: no tests to run
-PASS
-ok  	github.com/pingcap-incubator/tinykv/kv/raftstore	0.009s

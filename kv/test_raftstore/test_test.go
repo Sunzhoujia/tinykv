@@ -34,8 +34,8 @@ func SpawnClientsAndWait(t *testing.T, ch chan bool, ncli int, fn func(me int, t
 	defer func() { ch <- true }()
 	ca := make([]chan bool, ncli)
 	for cli := 0; cli < ncli; cli++ {
-		ca[cli] = make(chan bool)
-		go runClient(t, cli, ca[cli], fn)
+		ca[cli] = make(chan bool)         // 对每个client创建一个ch
+		go runClient(t, cli, ca[cli], fn) // 并发去发raftcmd
 	}
 	log.Infof("SpawnClientsAndWait: waiting for clients")
 	for cli := 0; cli < ncli; cli++ {
@@ -100,9 +100,11 @@ func checkConcurrentAppends(t *testing.T, v string, counts []int) {
 
 // make network chaos among servers
 func networkchaos(t *testing.T, cluster *Cluster, ch chan bool, done *int32, unreliable bool, partitions bool, electionTimeout time.Duration) {
-	defer func() { ch <- true }()
+	defer func() { ch <- true }() // 通知主线程，该线程已经结束
 	for atomic.LoadInt32(done) == 0 {
+		// 只允许不在同一分区的msg发送，模拟分区的发生
 		if partitions {
+			// 将所有节点分成两个区域
 			a := make([]int, cluster.count)
 			for i := 0; i < cluster.count; i++ {
 				a[i] = (rand.Int() % 2)
@@ -125,6 +127,8 @@ func networkchaos(t *testing.T, cluster *Cluster, ch chan bool, done *int32, unr
 		}
 
 		if unreliable {
+			// 在msg通过transport发出去时，有一定几率直接丢弃
+			// 这样就会导致不同节点状态出现不一致
 			cluster.AddFilter(&DropFilter{})
 		}
 		time.Sleep(electionTimeout + time.Duration(rand.Int63()%200)*time.Millisecond)
@@ -216,7 +220,7 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 		go SpawnClientsAndWait(t, ch_clients, nclients, func(cli int, t *testing.T) {
 			j := 0
 			defer func() {
-				clnts[cli] <- j
+				clnts[cli] <- j // 将client最后添加的key的值传出去
 			}()
 			last := ""
 			for atomic.LoadInt32(&done_clients) == 0 {
@@ -257,7 +261,7 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 		atomic.StoreInt32(&done_confchanger, 1) // tell confchanger to quit
 		log.Infof("client has quit")
 		if unreliable || partitions {
-			// log.Printf("wait for partitioner\n")
+			log.Infof("wait for partitioner\n")
 			<-ch_partitioner
 			// reconnect network and submit a request. A client may
 			// have submitted a request in a minority.  That request
@@ -269,6 +273,7 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 		}
 
 		// log.Printf("wait for clients\n")
+		// 当所有client操作完，解除阻塞
 		<-ch_clients
 
 		if crash {
@@ -374,12 +379,16 @@ func TestOnePartition2B(t *testing.T) {
 
 	region := cluster.GetRegion([]byte(""))
 	leader := cluster.LeaderOfRegion(region.GetId())
+
+	log.Infof("regionID %d, region peers %v, leader %v", region.Id, region.Peers, leader)
+
 	s1 := []uint64{leader.GetStoreId()}
 	s2 := []uint64{}
 	for _, p := range region.GetPeers() {
 		if p.GetId() == leader.GetId() {
 			continue
 		}
+		// 让leader分区有3个节点，非leader分区2个节点
 		if len(s1) < 3 {
 			s1 = append(s1, p.GetStoreId())
 		} else {
@@ -392,6 +401,9 @@ func TestOnePartition2B(t *testing.T) {
 		s1: s1,
 		s2: s2,
 	})
+
+	log.Infof("partition s1 %v, s2 %v", s1, s2)
+
 	cluster.MustPut([]byte("k1"), []byte("v1"))
 	cluster.MustGet([]byte("k1"), []byte("v1"))
 	MustGetNone(cluster.engines[s2[0]], []byte("k1"))
@@ -401,18 +413,23 @@ func TestOnePartition2B(t *testing.T) {
 	// old leader in minority, new leader should be elected
 	s2 = append(s2, s1[2])
 	s1 = s1[:2]
+	log.Infof("s2 will select a new leader with peers %v", s2)
 	cluster.AddFilter(&PartitionFilter{
 		s1: s1,
 		s2: s2,
 	})
+	log.Infof("partition s1 %v, s2 %v", s1, s2)
+
 	cluster.MustGet([]byte("k1"), []byte("v1"))
 	cluster.MustPut([]byte("k1"), []byte("changed"))
 	MustGetEqual(cluster.engines[s1[0]], []byte("k1"), []byte("v1"))
 	MustGetEqual(cluster.engines[s1[1]], []byte("k1"), []byte("v1"))
 	cluster.ClearFilters()
 
+	log.Infof("end partition")
 	// when partition heals, old leader should sync data
 	cluster.MustPut([]byte("k2"), []byte("v2"))
+	log.Infof("end client cmd")
 	MustGetEqual(cluster.engines[s1[0]], []byte("k2"), []byte("v2"))
 	MustGetEqual(cluster.engines[s1[0]], []byte("k1"), []byte("changed"))
 }

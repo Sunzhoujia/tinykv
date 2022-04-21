@@ -131,6 +131,9 @@ type Raft struct {
 	// the leader id
 	Lead uint64
 
+	// check quorum
+	heartbeats map[uint64]bool
+
 	// heartbeat interval, should send
 	heartbeatTimeout int
 	// baseline of election interval
@@ -171,7 +174,6 @@ func newRaft(c *Config) *Raft {
 	// storage存的是已经持久化的hardstate，snapshot，entries
 	raftlog := newLog(c.Storage)
 	hs, cs, err := c.Storage.InitialState()
-	log.Infof("hardstate: %v", hs)
 	if err != nil {
 		panic(err)
 	}
@@ -183,15 +185,23 @@ func newRaft(c *Config) *Raft {
 		Term:             0,
 		Vote:             None,
 		Prs:              make(map[uint64]*Progress),
+		heartbeats:       make(map[uint64]bool),
 		heartbeatTimeout: c.HeartbeatTick,
 		electionTimeout:  c.ElectionTick,
 	}
 
-	peers := cs.Nodes
-
+	// 应对2a测试，2a的peers是从config里拿的
+	peers := c.peers
+	if cs.Nodes != nil {
+		peers = cs.Nodes
+	}
 	// 初始化对每个peer的nextIndex和matchIndex
 	for _, p := range peers {
-		r.Prs[p] = &Progress{Next: 1, Match: 0}
+		r.Prs[p] = &Progress{Next: r.RaftLog.LastIndex(), Match: 0}
+	}
+
+	for _, p := range peers {
+		r.heartbeats[p] = false
 	}
 
 	// 判断是否第一次启动, 不是的话从hardState加载Term，Vote
@@ -199,6 +209,8 @@ func newRaft(c *Config) *Raft {
 		r.loadState(hs)
 	}
 
+	// 默认初始化是 applyIndex = commitIndex，但是raftDB里存的applyIndex可能会更大，所以需要校准
+	// 避免相同的 raftCmd重复执行，引发安全性问题
 	if c.Applied > 0 {
 		raftlog.appliedTo(c.Applied)
 	}
@@ -283,11 +295,28 @@ func (r *Raft) tickElection() {
 
 func (r *Raft) tickHeartbeat() {
 	r.heartbeatElapsed++
+	r.electionElapsed++
 
-	// TO-DO: checkQuorum
 	if r.State != StateLeader {
 		return
 	}
+
+	// checkQuorum
+	if r.electionElapsed >= r.electionTimeout {
+		r.heartbeats[r.id] = true
+		if !r.QuorumActive() {
+			r.becomeFollower(r.Term, None)
+			return
+		}
+		// 重置
+		r.electionElapsed = 0
+		r.resetRandomizedElectionTimeout()
+		for k, _ := range r.heartbeats {
+			r.heartbeats[k] = false
+		}
+
+	}
+
 	if r.heartbeatElapsed >= r.heartbeatTimeout {
 		r.heartbeatElapsed = 0
 		if err := r.Step(pb.Message{From: r.id, MsgType: pb.MessageType_MsgBeat}); err != nil {
@@ -436,11 +465,13 @@ func stepLeader(r *Raft, m pb.Message) error {
 
 	switch m.MsgType {
 	case pb.MessageType_MsgHeartbeatResponse:
+		r.heartbeats[m.From] = true
 		if pr.Match < r.RaftLog.LastIndex() {
 			r.sendAppend(m.From)
 		}
 		return nil
 	case pb.MessageType_MsgAppendResponse:
+		r.heartbeats[m.From] = true
 		preIndex := pr.Next - 1
 		if m.Reject {
 
@@ -509,7 +540,7 @@ func stepFollower(r *Raft, m pb.Message) error {
 		r.Lead = m.From
 		r.handleHeartbeat(m)
 	case pb.MessageType_MsgAppend:
-		log.Infof("follower append entries %+v at term %d", m.Entries, r.Term)
+		log.Infof("follower append entries %v at term %d", m.Entries, r.Term)
 		r.electionElapsed = 0
 		r.Lead = m.From
 		r.handleAppendEntries(m)
@@ -731,4 +762,14 @@ func (r *Raft) hardState() pb.HardState {
 		Vote:   r.Vote,
 		Commit: r.RaftLog.committed,
 	}
+}
+
+func (r *Raft) QuorumActive() bool {
+	alive := 0
+	for _, v := range r.heartbeats {
+		if v {
+			alive++
+		}
+	}
+	return alive >= r.quorum()
 }

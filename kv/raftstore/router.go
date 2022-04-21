@@ -18,6 +18,9 @@ type peerState struct {
 }
 
 // router routes a message to a peer.
+// 将Msg路由到peer，router有两个senderCh:
+// 1. peerSender：将Msg发给raftWorker
+// 2. storeSender：将Msg发给storeWorker
 type router struct {
 	peers       sync.Map // regionID -> peerState
 	peerSender  chan message.Msg
@@ -57,6 +60,8 @@ func (pr *router) close(regionID uint64) {
 	}
 }
 
+// 根据regionID，router查看map表，判断该store中是否有peer属于这个region
+// 这里只是做一个校验，如果存在peer，则将msg通过peerSender管道发给raft_worker
 func (pr *router) send(regionID uint64, msg message.Msg) error {
 	msg.RegionID = regionID
 	p := pr.get(regionID)
@@ -87,6 +92,7 @@ func (r *RaftstoreRouter) Send(regionID uint64, msg message.Msg) error {
 
 func (r *RaftstoreRouter) SendRaftMessage(msg *raft_serverpb.RaftMessage) error {
 	regionID := msg.RegionId
+	// 发送raftMsg给store中的某个peer，如果peer不存在这个store，则需要发送MsgTypeStoreRaftMessage信息给schedule汇报。
 	if r.router.send(regionID, message.NewPeerMsg(message.MsgTypeRaftMessage, regionID, msg)) != nil {
 		r.router.sendStore(message.NewPeerMsg(message.MsgTypeStoreRaftMessage, regionID, msg))
 	}
@@ -94,6 +100,9 @@ func (r *RaftstoreRouter) SendRaftMessage(msg *raft_serverpb.RaftMessage) error 
 
 }
 
+// router收到raftStorage传来的raftCmdREquest，进一步封装，先将raftCmdREquest和callback封装成MsgRaftCmd，然后在封装成统一的Msg（把region也封装进去）
+// 1. RaftCmdRequest + callback = MsgRaftCmd
+// 2. MsgRaftCmd + regionID = Msg
 func (r *RaftstoreRouter) SendRaftCommand(req *raft_cmdpb.RaftCmdRequest, cb *message.Callback) error {
 	cmd := &message.MsgRaftCmd{
 		Request:  req,

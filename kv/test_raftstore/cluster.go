@@ -142,6 +142,7 @@ func (c *Cluster) Start() {
 }
 
 func (c *Cluster) Shutdown() {
+	log.Infof("shotdown %v", c.simulator.GetStoreIds())
 	for _, storeID := range c.simulator.GetStoreIds() {
 		c.simulator.StopStore(storeID)
 	}
@@ -183,6 +184,7 @@ func (c *Cluster) AllocPeer(storeID uint64) *metapb.Peer {
 }
 
 func (c *Cluster) Request(key []byte, reqs []*raft_cmdpb.Request, timeout time.Duration) (*raft_cmdpb.RaftCmdResponse, *badger.Txn) {
+	log.Infof("request again")
 	startTime := time.Now()
 	for i := 0; i < 10 || time.Now().Sub(startTime) < timeout; i++ {
 		region := c.GetRegion(key)
@@ -214,6 +216,16 @@ func (c *Cluster) CallCommandOnLeader(request *raft_cmdpb.RaftCmdRequest, timeou
 	startTime := time.Now()
 	regionID := request.Header.RegionId
 	leader := c.LeaderOfRegion(regionID)
+
+	// if request.Requests[0].CmdType == raft_cmdpb.CmdType_Get {
+	// 	key := request.Requests[0].Get.Key
+	// 	log.Infof("peer %x CallCommandOnLeader Get key %s", leader.Id, string(key))
+	// } else if request.Requests[0].CmdType == raft_cmdpb.CmdType_Put {
+	// 	key, val := request.Requests[0].Put.Key, request.Requests[0].Put.Value
+	// 	log.Infof("peer %x CallCommandOnLeader Put [key %s, val %s]", leader.Id, string(key), string(val))
+	// }
+
+	// log.Infof("now leader %x", leader)
 	for {
 		if time.Now().Sub(startTime) > timeout {
 			return nil, nil

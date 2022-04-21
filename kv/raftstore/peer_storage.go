@@ -86,6 +86,7 @@ func (ps *PeerStorage) InitialState() (eraftpb.HardState, eraftpb.ConfState, err
 	return *raftState.HardState, util.ConfStateFromRegion(ps.region), nil
 }
 
+// return entries [low, high)
 func (ps *PeerStorage) Entries(low, high uint64) ([]eraftpb.Entry, error) {
 	if err := ps.checkRange(low, high); err != nil || low == high {
 		return nil, err
@@ -314,20 +315,17 @@ func (ps *PeerStorage) Append(entries []eraftpb.Entry, raftWB *engine_util.Write
 
 	offset := entries[0].Index
 	lastIndx, _ := ps.LastIndex()
-
 	// 有必要先删除持久化但不会commit的entry吗？？
 	if offset <= lastIndx {
-		for idx := offset; offset <= lastIndx; idx++ {
+		for idx := offset; idx <= lastIndx; idx++ {
 			key := meta.RaftLogKey(ps.region.Id, idx)
 			raftWB.DeleteMeta(key)
 		}
 	}
-
 	for _, ent := range entries {
 		key := meta.RaftLogKey(ps.region.Id, ent.Index)
 		raftWB.SetMeta(key, &ent)
 	}
-
 	return nil
 }
 
@@ -348,7 +346,7 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 
 // Save memory states to disk.
 // Do not modify ready in this function, this is a requirement to advance the ready object properly later.
-// 1. entries, 并删除之前append但不会commit的日志
+// 1. 持久化entries, 并删除之前append但不会commit的日志
 // 2. raftLocalState：hardState，lastIndex
 // 3. snapshot
 func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, error) {
@@ -356,11 +354,10 @@ func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, erro
 	// Your Code Here (2B/2C).
 
 	// raftLocalState和entries要原子写入
-	raftWb := engine_util.WriteBatch{}
+	raftWb := new(engine_util.WriteBatch)
 	raftState := *ps.raftState
-
 	if len(ready.Entries) > 0 {
-		ps.Append(ready.Entries, &raftWb)
+		ps.Append(ready.Entries, raftWb)
 		lastEntry := ready.Entries[len(ready.Entries)-1]
 		raftState.LastIndex = lastEntry.Index
 		raftState.LastTerm = lastEntry.Term
@@ -369,13 +366,13 @@ func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, erro
 	if !raft.IsEmptyHardState(ready.HardState) {
 		raftState.HardState = &ready.HardState
 	}
+
 	raftWb.SetMeta(meta.RaftStateKey(ps.region.Id), &raftState)
 	// 先写raftdb, 再修改raftState
-	if err := ps.Engines.WriteRaft(&raftWb); err != nil {
+	if err := ps.Engines.WriteRaft(raftWb); err != nil {
 		log.Panicf("Write fail %v", err)
 	}
 	ps.raftState = &raftState
-
 	return nil, nil
 }
 

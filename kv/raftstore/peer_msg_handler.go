@@ -51,7 +51,6 @@ func (d *peerMsgHandler) HandleRaftReady() {
 		ready := peer.RaftGroup.Ready()
 		// 将raftState， log entries，snapshot 持久化（暂时不考虑snapshot）
 		peer.peerStorage.SaveReadyState(&ready)
-
 		// 将该发送的消息发送出去
 		if len(ready.Messages) > 0 {
 			peer.Send(ctx.trans, ready.Messages)
@@ -59,7 +58,6 @@ func (d *peerMsgHandler) HandleRaftReady() {
 		// 对消息commit的entry进行apply
 		if len(ready.CommittedEntries) > 0 {
 			//log.Infof("commit entries %v", ready.CommittedEntries)
-
 			peer.applyEntries(ready.CommittedEntries)
 		}
 		// advance
@@ -67,8 +65,10 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	}
 }
 
+// 处理Msg的核心函数，根据Msg的不同类型，走不同的逻辑
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
 	switch msg.Type {
+	// raftMsg里封装的是raft模块的pb.message
 	case message.MsgTypeRaftMessage:
 		//log.Info("%x handle raftMsg %v", d.peer.Meta.Id, msg)
 		raftMsg := msg.Data.(*rspb.RaftMessage)
@@ -76,7 +76,7 @@ func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
 			log.Errorf("%s handle raft message error %v", d.Tag, err)
 		}
 	case message.MsgTypeRaftCmd:
-		//log.Info("%x handle raftCmd %v", d.peer.Meta.Id, msg)
+		log.Infof("%x handle raftCmd %v", d.peer.Meta.Id, msg)
 		raftCMD := msg.Data.(*message.MsgRaftCmd)
 		d.proposeRaftCommand(raftCMD.Request, raftCMD.Callback)
 	case message.MsgTypeTick:
@@ -153,6 +153,15 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 			log.Panicf("Encode error : %v", err)
 		}
 	}
+	// debug partition
+	if msg.Requests[0].CmdType == raft_cmdpb.CmdType_Get {
+		key := msg.Requests[0].Get.Key
+		log.Infof("peer %x received Get key %s", peer.PeerId(), string(key))
+	} else if msg.Requests[0].CmdType == raft_cmdpb.CmdType_Put {
+		key, val := msg.Requests[0].Put.Key, msg.Requests[0].Put.Value
+		log.Infof("peer %x received Put [key %s, val %s]", peer.PeerId(), string(key), string(val))
+	}
+
 	if err = peer.RaftGroup.Propose(buf.Bytes()); err != nil {
 		log.Panicf("Error when propose raftcmd")
 	}

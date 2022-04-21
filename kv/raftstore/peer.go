@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Connor1996/badger"
 	"github.com/pingcap-incubator/tinykv/kv/config"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/message"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/meta"
@@ -227,6 +228,7 @@ func (p *peer) Destroy(engine *engine_util.Engines, keepData bool) error {
 		p.peerStorage.ClearData()
 	}
 
+	// 通知client region已经移除
 	for _, proposal := range p.proposals {
 		NotifyReqRegionRemoved(region.Id, proposal.cb)
 	}
@@ -268,6 +270,7 @@ func (p *peer) IsLeader() bool {
 	return p.RaftGroup.Raft.State == raft.StateLeader
 }
 
+// 对raft状态机发出来的Msg再进行封装，发到网络上
 func (p *peer) Send(trans Transport, msgs []eraftpb.Message) {
 	for _, msg := range msgs {
 		err := p.sendRaftMessage(msg, trans)
@@ -396,11 +399,12 @@ func (p *peer) sendRaftMessage(msg eraftpb.Message, trans Transport) error {
 }
 
 func (p *peer) applyEntries(entries []eraftpb.Entry) {
+	log.Infof("----apply entries %v", entries)
 	for _, ent := range entries {
-
-		if ent.Data == nil {
-			continue
-		}
+		// no-op entry
+		// if ent.Data == nil {
+		// 	continue
+		// }
 		reqs := []raft_cmdpb.Request{}
 		dec := gob.NewDecoder(bytes.NewBuffer(ent.Data))
 		for {
@@ -426,7 +430,7 @@ func (p *peer) processNormalRequest(reqs []raft_cmdpb.Request, i, t uint64) {
 		Responses: make([]*raft_cmdpb.Response, 0),
 	}
 
-	kvWB := &engine_util.WriteBatch{}
+	kvWB := new(engine_util.WriteBatch)
 
 	for _, req := range reqs {
 		switch req.CmdType {
@@ -441,11 +445,20 @@ func (p *peer) processNormalRequest(reqs []raft_cmdpb.Request, i, t uint64) {
 		}
 	}
 
-	if kvWB.Len() > 0 {
-		if err := p.peerStorage.Engines.WriteKV(kvWB); err != nil {
-			log.Panicf("write error %v", err)
-		}
+	// 原子的将applyIndex和kv存储进kv中，防止crash时的safety的问题
+	applystate := *p.peerStorage.applyState
+	if applystate.AppliedIndex+1 != i {
+		log.Panicf("peer %x [applyIndex %d, nextApplyIndex %d]", p.PeerId(), applystate.AppliedIndex, i)
 	}
+
+	applystate.AppliedIndex = i
+	if err := engine_util.PutMeta(p.peerStorage.Engines.Kv, meta.ApplyStateKey(p.regionId), &applystate); err != nil {
+		log.Panicf("fail to write applystate")
+	}
+	if err := p.peerStorage.Engines.WriteKV(kvWB); err != nil {
+		log.Panicf("write error %v", err)
+	}
+	p.peerStorage.applyState = &applystate
 
 	// notify server
 	p.NotifyServer(resp, i, t)
@@ -488,12 +501,12 @@ func (p *peer) ProcessDeleteReq(req *raft_cmdpb.DeleteRequest, kvWB *engine_util
 func (p *peer) ProcessGetReq(req *raft_cmdpb.GetRequest) *raft_cmdpb.Response {
 	resp := &raft_cmdpb.Response{
 		CmdType: raft_cmdpb.CmdType_Get,
-		Get:     &raft_cmdpb.GetResponse{},
+		Get:     new(raft_cmdpb.GetResponse),
 	}
 
 	cf, key := req.Cf, req.Key
 	val, err := engine_util.GetCF(p.peerStorage.Engines.Kv, cf, key)
-	if err != nil {
+	if err == badger.ErrKeyNotFound {
 		resp.Get.Value = nil
 	}
 	resp.Get.Value = val
@@ -501,6 +514,16 @@ func (p *peer) ProcessGetReq(req *raft_cmdpb.GetRequest) *raft_cmdpb.Response {
 }
 
 func (p *peer) NotifyServer(resp *raft_cmdpb.RaftCmdResponse, i, t uint64) {
+	// if !p.IsLeader() {
+	// 	for len(p.proposals) > 0 {
+	// 		prop := p.proposals[0]
+	// 		log.Infof("peer %x follower, but response client %v", prop)
+	// 		prop.cb.Done(ErrRespStaleCommand(prop.term))
+	// 		p.proposals = p.proposals[1:]
+	// 	}
+	// 	return
+	// }
+
 	for len(p.proposals) > 0 {
 		prop := p.proposals[0]
 		if t < prop.term {
@@ -524,40 +547,11 @@ func (p *peer) NotifyServer(resp *raft_cmdpb.RaftCmdResponse, i, t uint64) {
 			// }
 			prop.cb.Txn = p.peerStorage.Engines.Kv.NewTransaction(false)
 			prop.cb.Done(resp)
+			log.Infof("peer %x notify term %d index %d", p.PeerId(), t, i)
 			p.proposals = p.proposals[1:]
 			return
 		}
 		log.Panicf("This should not happen.")
 	}
 
-	// if !p.IsLeader() {
-	// 	return
-	// }
-
-	// log.Infof("peer %x notify server index %d, term %d", p.PeerId(), i, t)
-	// if len(p.proposals) == 0 {
-	// 	log.Panicf("peer %x Fail to find callback for len %d", p.PeerId(), len(p.proposals))
-	// }
-
-	// offset := p.proposals[0].index
-	// if offset+uint64(len(p.proposals)) <= i {
-	// 	log.Panicf("Fail to find callback for %v", p.proposals[0])
-	// }
-
-	// prop := p.proposals[i-offset]
-
-	// // maybe no need to check
-	// if prop.term != t {
-	// 	log.Panicf("Mismatch term when callback , proposal term %d, response term %d", prop.term, t)
-	// }
-
-	// // 对snap请求需要携带txn
-	// if resp.Responses[0].CmdType == raft_cmdpb.CmdType_Snap {
-	// 	prop.cb.Txn = p.peerStorage.Engines.Kv.NewTransaction(false)
-	// }
-
-	// prop.cb.Done(resp)
-	// // compact
-	// log.Infof("peer %x compact propose [%d, %d]", p.PeerId(), p.proposals[0].index, prop.index)
-	// p.proposals = append([]*proposal{}, p.proposals[i-offset+1:]...)
 }

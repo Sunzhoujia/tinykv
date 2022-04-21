@@ -102,11 +102,13 @@ func (r *tickDriver) run() {
 	for {
 		select {
 		case <-timer:
+			// 定期驱动每个region的peer
 			for regionID := range r.regions {
 				if r.router.send(regionID, message.NewPeerMsg(message.MsgTypeTick, regionID, nil)) != nil {
 					delete(r.regions, regionID)
 				}
 			}
+			// 驱动storeTick
 			r.tickStore()
 		case regionID, ok := <-r.newRegionCh:
 			if !ok {
@@ -121,6 +123,7 @@ func (r *tickDriver) stop() {
 	close(r.newRegionCh)
 }
 
+// 如果超时，由router去发storeTick的消息给 store_worker
 func (r *tickDriver) tickStore() {
 	r.storeTicker.tickClock()
 	for i := range r.storeTicker.schedules {

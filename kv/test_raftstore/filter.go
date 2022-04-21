@@ -38,6 +38,7 @@ func (f *PartitionFilter) After() {}
 
 type DropFilter struct{}
 
+// 0.9 true， 0.1 false
 func (f *DropFilter) Before(msg *rspb.RaftMessage) bool {
 	return (rand.Int() % 1000) > 100
 }

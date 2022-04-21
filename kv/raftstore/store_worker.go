@@ -59,6 +59,7 @@ func (sw *storeWorker) run(closeCh <-chan struct{}, wg *sync.WaitGroup) {
 		var msg message.Msg
 		select {
 		case <-closeCh:
+			log.Infof("store %d storeWorker quit", sw.ctx.store.Id)
 			return
 		case msg = <-sw.receiver:
 		}
@@ -82,12 +83,15 @@ func (d *storeWorker) handleMsg(msg message.Msg) {
 			log.Errorf("handle raft message failed storeID %d, %v", d.id, err)
 		}
 	case message.MsgTypeStoreTick:
+		// 会收到两种类型的StoreTick：StoreTickSchedulerStoreHeartbeat， StoreTickSnapGC
 		d.onTick(msg.Data.(StoreTick))
 	case message.MsgTypeStoreStart:
+		// 开启tick
 		d.start(msg.Data.(*metapb.Store))
 	}
 }
 
+// 计算下一次的tick时间
 func (d *storeWorker) start(store *metapb.Store) {
 	d.id = store.Id
 	d.ticker.scheduleStore(StoreTickSchedulerStoreHeartbeat)
