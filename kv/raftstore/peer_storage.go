@@ -324,6 +324,9 @@ func (ps *PeerStorage) Append(entries []eraftpb.Entry, raftWB *engine_util.Write
 
 	offset := entries[0].Index
 	lastIndx, _ := ps.LastIndex()
+	if offset > lastIndx+1 {
+		log.Panicf("unexpect situation, offset %d, lastIndex %d", offset, lastIndx)
+	}
 	// 有必要先删除持久化但不会commit的entry吗？？
 	if offset <= lastIndx {
 		for idx := offset; idx <= lastIndx; idx++ {
@@ -404,18 +407,6 @@ func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, erro
 	kvWB := new(engine_util.WriteBatch)
 	var applyResult *ApplySnapResult
 
-	if len(ready.Entries) > 0 {
-		ps.Append(ready.Entries, raftWB)
-		lastEntry := ready.Entries[len(ready.Entries)-1]
-		ps.raftState.LastIndex = lastEntry.Index
-		ps.raftState.LastTerm = lastEntry.Term
-	}
-
-	if !raft.IsEmptyHardState(ready.HardState) {
-		ps.raftState.HardState = &ready.HardState
-	}
-	raftWB.SetMeta(meta.RaftStateKey(ps.region.Id), ps.raftState)
-
 	// 处理pendingSnapshot
 	if !raft.IsEmptySnap(&ready.Snapshot) {
 		var err error
@@ -424,6 +415,17 @@ func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, erro
 			log.Infof("Fail to apply snapshot, %v", err)
 		}
 	}
+
+	if len(ready.Entries) > 0 {
+		ps.Append(ready.Entries, raftWB)
+		lastEntry := ready.Entries[len(ready.Entries)-1]
+		ps.raftState.LastIndex = lastEntry.Index
+		ps.raftState.LastTerm = lastEntry.Term
+	}
+	if !raft.IsEmptyHardState(ready.HardState) {
+		ps.raftState.HardState = &ready.HardState
+	}
+	raftWB.SetMeta(meta.RaftStateKey(ps.region.Id), ps.raftState)
 
 	// 最后将entries，raftState，applyState，regionState一起落盘
 	if err := ps.Engines.WriteKV(kvWB); err != nil {
