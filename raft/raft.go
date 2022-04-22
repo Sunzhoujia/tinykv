@@ -236,13 +236,31 @@ func (r *Raft) sendAppend(to uint64) bool {
 	m := pb.Message{}
 	m.To = to
 
+	// 获取用于日志匹配的日志条目（index为next index - 1的日志）的term
 	term, errt := r.RaftLog.Term(pr.Next - 1)
 	// 获取Next之后的log
+	// 注意：获取不到entry是不会返回错误的，因为存在需要发送空Msg来更新Follower的commitIndex的情况
 	ents, erre := r.RaftLog.Entries(pr.Next)
 
 	if errt != nil || erre != nil {
-		// TO-DO: send snapshot
-		panic("need snapshot")
+		// send snapshot
+		m.MsgType = pb.MessageType_MsgSnapshot
+		snapshot, err := r.RaftLog.snapshot()
+		if err != nil {
+			if err == ErrSnapshotTemporarilyUnavailable {
+				log.Infof("%x failed to send snapshot to %x because snapshot is temporarily unavailable", r.id, to)
+				return false
+			}
+			log.Panicf("unexpect error %v", err)
+		}
+		if IsEmptySnap(&snapshot) {
+			log.Panicf("need non-empty snapshot")
+		}
+
+		m.Snapshot = &snapshot
+		sindex, sterm := snapshot.Metadata.Index, snapshot.Metadata.Index
+		log.Infof("%x [firstindex: %d, commit: %d] sent snapshot[index: %d, term: %d] to %x [%s]",
+			r.id, r.RaftLog.FirstIndex(), r.RaftLog.committed, sindex, sterm, to, pr)
 	} else {
 		m.MsgType = pb.MessageType_MsgAppend
 		m.Index = pr.Next - 1
@@ -522,6 +540,10 @@ func stepCandidate(r *Raft, m pb.Message) error {
 	case pb.MessageType_MsgAppend:
 		r.becomeFollower(m.Term, m.From)
 		r.handleAppendEntries(m)
+	case pb.MessageType_MsgSnapshot:
+		// 收到快照消息，说明集群已经有leader，转换为follower
+		r.becomeFollower(m.Term, m.From)
+		r.handleSnapshot(m)
 	}
 	return nil
 
@@ -544,6 +566,10 @@ func stepFollower(r *Raft, m pb.Message) error {
 		r.electionElapsed = 0
 		r.Lead = m.From
 		r.handleAppendEntries(m)
+	case pb.MessageType_MsgSnapshot:
+		r.electionElapsed = 0
+		r.Lead = m.From
+		r.handleSnapshot(m)
 	}
 	return nil
 }
@@ -647,6 +673,18 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 // handleSnapshot handle Snapshot RPC request
 func (r *Raft) handleSnapshot(m pb.Message) {
 	// Your Code Here (2C).
+	sindex, sterm := m.Snapshot.Metadata.Index, m.Snapshot.Metadata.Term
+	// 调用restore方法尝试应用快照。如果快照应用功能成功，则返回一条MsgAppResp消息，该消息的Index字段为本地最后一条日志的index
+	if r.restore(m.Snapshot) {
+		log.Infof("%x [commit: %d] restored snapshot [index: %d, term: %d]",
+			r.id, r.RaftLog.committed, sindex, sterm)
+		r.send(pb.Message{To: m.From, MsgType: pb.MessageType_MsgAppendResponse, Index: r.RaftLog.LastIndex()})
+	} else {
+		// 如果快照没有被应用，那么返回的MsgAppResp消息的Index字段会被置为本地的committed索引
+		log.Infof("%x [commit: %d] ignored snapshot [index: %d, term: %d]",
+			r.id, r.RaftLog.committed, sindex, sterm)
+		r.send(pb.Message{To: m.From, MsgType: pb.MessageType_MsgAppendResponse, Index: r.RaftLog.committed})
+	}
 }
 
 // addNode add a new node to raft group
@@ -772,4 +810,41 @@ func (r *Raft) QuorumActive() bool {
 		}
 	}
 	return alive >= r.quorum()
+}
+
+func (r *Raft) restore(s *pb.Snapshot) bool {
+	// 如果快照的index没超过本地的committed索引，这说明快照过旧，因此不做处理直接返回false。
+	if s.Metadata.Index <= r.RaftLog.committed {
+		return false
+	}
+
+	if r.State != StateFollower {
+		log.Panicf("%x attempted to restore snapshot as leader; should never happen", r.id)
+	}
+
+	// 将快照的index和term与本地日志匹配，如果成功匹配，说明本地日志已经包含了快照覆盖的日志，因此不要应用该快照。
+	// 因为快照覆盖的日志都应是已被提交的日志，这也说明了本地的committed索引落后了，因此调用raftLog的commitTo方法，让本地committed索引快速前进到该快照的index
+	if r.RaftLog.matchTerm(s.Metadata.Index, s.Metadata.Term) {
+		log.Infof("%x [commit: %d, lastindex: %d, lastterm: %d] fast-forwarded commit to snapshot [index: %d, term: %d]",
+			r.id, r.RaftLog.committed, r.RaftLog.LastIndex(), r.RaftLog.LastTerm(), s.Metadata.Index, s.Metadata.Term)
+		r.RaftLog.commitTo(s.Metadata.Index)
+		return false
+	}
+
+	// 如果到这里方法仍没返回，则可以将快照应用到本地。调用raftLog的restore方法，并返回true。
+	r.RaftLog.restore(s)
+
+	// 纯粹应对TestRestoreSnapshot2C
+	if _, ok := r.RaftLog.storage.(*MemoryStorage); ok {
+		r.RaftLog.storage.(*MemoryStorage).ApplySnapshot(*s)
+		for _, p := range s.Metadata.ConfState.Nodes {
+			r.Prs[p] = &Progress{Next: r.RaftLog.LastIndex(), Match: 0}
+		}
+	}
+
+	// TO-DO: ConfChange相关
+
+	log.Infof("%x [commit: %d, lastindex: %d, lastterm: %d] restored snapshot [index: %d, term: %d]",
+		r.id, r.RaftLog.committed, r.RaftLog.LastIndex(), r.RaftLog.LastTerm(), s.Metadata.Index, s.Metadata.Term)
+	return true
 }

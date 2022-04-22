@@ -15,6 +15,8 @@
 package raft
 
 import (
+	"fmt"
+
 	"github.com/pingcap-incubator/tinykv/log"
 	pb "github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
 )
@@ -51,6 +53,7 @@ type RaftLog struct {
 
 	// the incoming unstable snapshot, if any.
 	// (Used in 2C)
+	// pendingsnapshot仅当接收从leader发送的snapshot时才存在
 	pendingSnapshot *pb.Snapshot
 
 	// Your Data Here (2A).
@@ -247,10 +250,10 @@ func (l *RaftLog) FirstIndex() uint64 {
 
 // 返回最后一个索引的term
 func (l *RaftLog) LastTerm() uint64 {
-	t, err := l.Term(l.LastIndex())
-	if err != nil {
-		log.Panicf("unexpected error when getting the last term (%v)", err)
-	}
+	t, _ := l.Term(l.LastIndex())
+	// if err != nil {
+	// 	log.Panicf("unexpected error when getting the last term (%v)", err)
+	// }
 	return t
 }
 
@@ -395,4 +398,32 @@ func (l *RaftLog) findConflict(ents []pb.Entry) uint64 {
 		}
 	}
 	return 0
+}
+
+// 先从pendingSnapshot里拿，拿不到再去storage.Snapshot()里拿
+func (l *RaftLog) snapshot() (pb.Snapshot, error) {
+	// Follower应用完snapshot后应该直接清除pendingSnapshot了
+	if l.pendingSnapshot != nil {
+		log.Infof("Get snapshot from pendingSnapshot?????")
+		return *l.pendingSnapshot, nil
+	}
+	return l.storage.Snapshot()
+}
+
+func (l *RaftLog) restore(s *pb.Snapshot) {
+	log.Infof("log [%s] starts to restore snapshot [index: %d, term: %d]", l, s.Metadata.Index, s.Metadata.Term)
+	l.committed = s.Metadata.Index
+	l.stabled = s.Metadata.Index
+	l.dummyIndex = s.Metadata.Index
+	l.pendingSnapshot = s
+	// 都把entries情况了，所以直接将l.applie置为snapIndex，否则上层在获取ready，调用nextentries会出错
+	l.applied = s.Metadata.Index
+	// 直接全部compact掉就行？
+	// 走到这一步说明snap的最后一条entry是和raftlog不匹配的，所以即使raftlog有在snapIdnex后面还有log，也会被leader给覆盖掉，所以直接丢弃就行
+	// lastIndex会返回dummyIndex = snapIndex
+	l.entries = []pb.Entry{}
+}
+
+func (l *RaftLog) String() string {
+	return fmt.Sprintf("committed=%d, applied=%d, stabled=%d, lastIndex=%d", l.committed, l.applied, l.stabled, l.LastIndex())
 }

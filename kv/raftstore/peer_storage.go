@@ -152,6 +152,10 @@ func (ps *PeerStorage) FirstIndex() (uint64, error) {
 	return ps.truncatedIndex() + 1, nil
 }
 
+// 根据ps.snapState.StateType的状态走不同的逻辑：
+// 1. SnapState_Generating: 尝试从ch获取snapshot，失败则返回ErrSnapshotTemporarilyUnavailable
+//    成功接收snapshot，则去做一些检查，没问题就返回snapshot
+// 2. SnapState_Relax: 发起snapshot request，给regionWorker发一个task，然后先返回ErrSnapshotTemporarilyUnavailable，再下次获取时可能返回snapshot
 func (ps *PeerStorage) Snapshot() (eraftpb.Snapshot, error) {
 	var snapshot eraftpb.Snapshot
 	if ps.snapState.StateType == snap.SnapState_Generating {
@@ -180,8 +184,10 @@ func (ps *PeerStorage) Snapshot() (eraftpb.Snapshot, error) {
 		return snapshot, err
 	}
 
+	// 发起snapshot request，给 regionWorker发一个task
 	log.Infof("%s requesting snapshot", ps.Tag)
 	ps.snapTriedCnt++
+	// 将receiveCh 保存下来
 	ch := make(chan *eraftpb.Snapshot, 1)
 	ps.snapState = snap.SnapState{
 		StateType: snap.SnapState_Generating,
@@ -232,16 +238,19 @@ func (ps *PeerStorage) AppliedIndex() uint64 {
 }
 
 func (ps *PeerStorage) validateSnap(snap *eraftpb.Snapshot) bool {
+	// 检查 snapshot 是否过期
 	idx := snap.GetMetadata().GetIndex()
 	if idx < ps.truncatedIndex() {
 		log.Infof("%s snapshot is stale, generate again, snapIndex: %d, truncatedIndex: %d", ps.Tag, idx, ps.truncatedIndex())
 		return false
 	}
+	// 检查收到的snapshot能否decode
 	var snapData rspb.RaftSnapshotData
 	if err := proto.UnmarshalMerge(snap.GetData(), &snapData); err != nil {
 		log.Errorf("%s failed to decode snapshot, it may be corrupted, err: %v", ps.Tag, err)
 		return false
 	}
+	// 检查收到的snapshot的regionEpoch是否过时
 	snapEpoch := snapData.GetRegion().GetRegionEpoch()
 	latestEpoch := ps.region.GetRegionEpoch()
 	if snapEpoch.GetConfVer() < latestEpoch.GetConfVer() {
@@ -341,39 +350,90 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 	// and send RegionTaskApply task to region worker through ps.regionSched, also remember call ps.clearMeta
 	// and ps.clearExtraData to delete stale data
 	// Your Code Here (2C).
-	return nil, nil
+	snapMete := snapshot.Metadata
+	if ps.applyState.AppliedIndex > snapMete.Index {
+		log.Panicf("unexpected situation")
+	}
+	ps.applyState.AppliedIndex = snapMete.Index
+	ps.applyState.TruncatedState = &rspb.RaftTruncatedState{Index: snapMete.Index, Term: snapMete.Term}
+
+	if ps.raftState.LastIndex < snapMete.Index {
+		ps.raftState.LastIndex, ps.raftState.LastTerm = snapMete.Index, snapMete.Term
+	}
+
+	notify := make(chan bool, 1)
+	ps.regionSched <- &runner.RegionTaskApply{
+		RegionId: ps.region.GetId(),
+		Notifier: notify,
+		SnapMeta: snapMete,
+		StartKey: snapData.Region.StartKey,
+		EndKey:   snapData.Region.EndKey,
+	}
+	// 阻塞等待snapshot的apply
+	<-notify
+
+	// 删除旧数据
+	if ps.isInitialized() {
+		// delete raftState, applyState, regionState and raft log entries
+		ps.clearMeta(kvWB, raftWB)
+		// // Delete all data that is not covered by `new_region`.
+		ps.clearExtraData(snapData.Region)
+	}
+
+	ps.region = snapData.Region
+
+	raftWB.SetMeta(meta.RaftStateKey(ps.region.Id), ps.raftState)
+	kvWB.SetMeta(meta.ApplyStateKey(ps.region.Id), ps.applyState)
+	kvWB.SetMeta(meta.RegionStateKey(ps.region.Id), &rspb.RegionLocalState{
+		State:  rspb.PeerState_Normal,
+		Region: ps.region,
+	})
+	return &ApplySnapResult{PrevRegion: ps.region, Region: snapData.Region}, nil
 }
 
 // Save memory states to disk.
 // Do not modify ready in this function, this is a requirement to advance the ready object properly later.
 // 1. 持久化entries, 并删除之前append但不会commit的日志
 // 2. raftLocalState：hardState，lastIndex
-// 3. snapshot
+// 3. snapshot：修改lastIndex，applyIndex，region
 func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, error) {
 	// Hint: you may call `Append()` and `ApplySnapshot()` in this function
 	// Your Code Here (2B/2C).
-
 	// raftLocalState和entries要原子写入
-	raftWb := new(engine_util.WriteBatch)
-	raftState := *ps.raftState
+	raftWB := new(engine_util.WriteBatch)
+	kvWB := new(engine_util.WriteBatch)
+	var applyResult *ApplySnapResult
+
 	if len(ready.Entries) > 0 {
-		ps.Append(ready.Entries, raftWb)
+		ps.Append(ready.Entries, raftWB)
 		lastEntry := ready.Entries[len(ready.Entries)-1]
-		raftState.LastIndex = lastEntry.Index
-		raftState.LastTerm = lastEntry.Term
+		ps.raftState.LastIndex = lastEntry.Index
+		ps.raftState.LastTerm = lastEntry.Term
 	}
 
 	if !raft.IsEmptyHardState(ready.HardState) {
-		raftState.HardState = &ready.HardState
+		ps.raftState.HardState = &ready.HardState
+	}
+	raftWB.SetMeta(meta.RaftStateKey(ps.region.Id), ps.raftState)
+
+	// 处理pendingSnapshot
+	if !raft.IsEmptySnap(&ready.Snapshot) {
+		var err error
+		applyResult, err = ps.ApplySnapshot(&ready.Snapshot, kvWB, raftWB)
+		if err != nil {
+			log.Infof("Fail to apply snapshot, %v", err)
+		}
 	}
 
-	raftWb.SetMeta(meta.RaftStateKey(ps.region.Id), &raftState)
-	// 先写raftdb, 再修改raftState
-	if err := ps.Engines.WriteRaft(raftWb); err != nil {
-		log.Panicf("Write fail %v", err)
+	// 最后将entries，raftState，applyState，regionState一起落盘
+	if err := ps.Engines.WriteKV(kvWB); err != nil {
+		log.Panicf("write kvDB Error : %v", err)
 	}
-	ps.raftState = &raftState
-	return nil, nil
+	if err := ps.Engines.WriteRaft(raftWB); err != nil {
+		log.Panicf("write raftDB Error : %v", err)
+	}
+
+	return applyResult, nil
 }
 
 func (ps *PeerStorage) ClearData() {
