@@ -177,9 +177,6 @@ func (l *RaftLog) append(ents ...pb.Entry) uint64 {
 	if after := ents[0].Index - 1; after < l.committed {
 		log.Panicf("after(%d) is out of range [committed(%d)]", after, l.committed)
 	}
-	//log.Infof("try to append entries [firstIndex %d, lastIndex %d] to lastIndex %d", ents[0].Index, ents[uint64(len(ents)-1)].Index, l.LastIndex())
-	// log.Infof("l.entries before append %v", l.entries)
-	// log.Infof("ents before append %v", ents)
 	l.truncateAndAppend(ents)
 	return l.LastIndex()
 }
@@ -197,20 +194,17 @@ func (l *RaftLog) truncateAndAppend(ents []pb.Entry) {
 		l.entries = append(l.entries, ents...)
 	case end < l.LastIndex():
 		log.Infof("truncateAndAppend case 2, start %d, end %d, lastIndex %d", start, end, l.LastIndex())
-		// [dummIndex, start) + [start, end] + [end+1, lastIndex]
-		// log.Infof("before1 entries %+v", l.entries)
-		// log.Infof("before1 ents %+v", ents)
 		firstEnts := l.slice(l.FirstIndex(), start)
 		l.entries = append(firstEnts, ents...)
 	default:
 		log.Infof("truncateAndAppend case 3: start %d, end %d", start, end)
-		// [dummIndex, start) + [start, end]
 		l.entries = append([]pb.Entry{}, l.slice(l.FirstIndex(), start)...)
 		l.entries = append(l.entries, ents...)
 	}
 	// update l.stabled here?
+	// if log rollback，l.stable must rollback
+	// because we need construct Ready's Entries for upper app to persist
 	l.stabled = min(l.stabled, start-1)
-
 }
 
 // entry index range [li, hi)
@@ -269,8 +263,11 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 	}
 
 	if i == l.dummyIndex {
-		t, err := l.storage.Term(i)
-		return t, err
+		if l.pendingSnapshot != nil {
+			return l.pendingSnapshot.Metadata.Term, nil
+		} else {
+			return l.storage.Term(i)
+		}
 	}
 
 	offset := l.FirstIndex()
@@ -331,6 +328,7 @@ func (l *RaftLog) maybeCommit(maxIndex, term uint64) bool {
 
 // 1. log match
 // 2. append log entries
+// 3. update commitIndex
 func (l *RaftLog) maybeAppend(index, logTerm, committed uint64, ents ...pb.Entry) (lastnewi uint64, ok bool) {
 	if l.matchTerm(index, logTerm) {
 		lastnewi = index + uint64(len(ents))
@@ -338,12 +336,13 @@ func (l *RaftLog) maybeAppend(index, logTerm, committed uint64, ents ...pb.Entry
 		log.Infof("match firstIndex %d", ci)
 		switch {
 		case ci == 0:
+			// 已拥有全部新日志，不需要append了
 		case ci <= l.committed:
 			// 如果返回值小于当前的committed索引，说明committed前的日志发生了冲突，这违背了Raft算法保证的Log Matching性质，因此会引起panic。
 			log.Panicf("entry %d conflict with committed entry [committed(%d)]", ci, l.committed)
 		default:
 			// 如果返回值大于committed，既可能是冲突发生在committed之后，也可能是有新日志，
-			// 但二者的处理方式都是相同的，即从将从冲突处或新日志处开始的日志覆盖或追加到当前日志中即可。
+			// 但二者的处理方式都是相同的，即从冲突处或新日志处开始的日志覆盖或追加到当前日志中即可。
 			offset := index + 1
 			if ci-offset > uint64(len(ents)) {
 				log.Panicf("index, %d, is out of range [%d]", ci-offset, len(ents))

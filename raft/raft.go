@@ -171,7 +171,6 @@ func newRaft(c *Config) *Raft {
 		panic(err.Error())
 	}
 	// Your Code Here (2A).
-	// storage存的是已经持久化的hardstate，snapshot，entries
 	raftlog := newLog(c.Storage)
 	hs, cs, err := c.Storage.InitialState()
 	if err != nil {
@@ -179,18 +178,19 @@ func newRaft(c *Config) *Raft {
 	}
 
 	r := &Raft{
-		id:               c.ID,
-		Lead:             None,
-		RaftLog:          raftlog,
-		Term:             0,
-		Vote:             None,
-		Prs:              make(map[uint64]*Progress),
+		id:      c.ID,
+		Lead:    None,
+		RaftLog: raftlog,
+		Term:    0,
+		Vote:    None,
+		Prs:     make(map[uint64]*Progress),
+		// leader维护活跃的follower，在electionTimeout时如果没有半数活跃Follower，就退位。类似于checkQuorum
 		heartbeats:       make(map[uint64]bool),
 		heartbeatTimeout: c.HeartbeatTick,
 		electionTimeout:  c.ElectionTick,
 	}
 
-	// 应对2a测试，2a的peers是从config里拿的
+	// 应对2a测试，2a的peers是从config里拿的，2b是从storage拿的
 	peers := c.peers
 	if cs.Nodes != nil {
 		peers = cs.Nodes
@@ -208,22 +208,19 @@ func newRaft(c *Config) *Raft {
 	if !IsEmptyHardState(hs) {
 		r.loadState(hs)
 	}
-
 	// 默认初始化是 applyIndex = commitIndex，但是raftDB里存的applyIndex可能会更大，所以需要校准
 	// 避免相同的 raftCmd重复执行，引发安全性问题
 	if c.Applied > 0 {
 		raftlog.appliedTo(c.Applied)
 	}
-
 	r.becomeFollower(r.Term, None)
 
 	var nodesStrs []string
-	for k, _ := range r.votes {
+	for k, _ := range r.Prs {
 		nodesStrs = append(nodesStrs, fmt.Sprintf("%x", k))
 	}
 	log.Infof("newRaft %x [peers: [%s], term: %d ]",
 		r.id, strings.Join(nodesStrs, ","), r.Term)
-
 	return r
 }
 
@@ -232,18 +229,15 @@ func newRaft(c *Config) *Raft {
 func (r *Raft) sendAppend(to uint64) bool {
 	// Your Code Here (2A).
 	pr := r.Prs[to]
-
 	m := pb.Message{}
 	m.To = to
 
-	// 获取用于日志匹配的日志条目（index为next index - 1的日志）的term
 	term, errt := r.RaftLog.Term(pr.Next - 1)
-	// 获取Next之后的log
-	// 注意：获取不到entry是不会返回错误的，因为存在需要发送空Msg来更新Follower的commitIndex的情况
+	// 获取空entry是可以的，leader会发送empty entry来更新Follower的commitIndex
 	ents, erre := r.RaftLog.Entries(pr.Next)
 
+	// pr.Next has been compacted，leader needs to send snapshot
 	if errt != nil || erre != nil {
-		// send snapshot
 		m.MsgType = pb.MessageType_MsgSnapshot
 		snapshot, err := r.RaftLog.snapshot()
 		if err != nil {
@@ -262,6 +256,7 @@ func (r *Raft) sendAppend(to uint64) bool {
 		log.Infof("%x [firstindex: %d, commit: %d] sent snapshot[index: %d, term: %d] to %x [%s]",
 			r.id, r.RaftLog.FirstIndex(), r.RaftLog.committed, sindex, sterm, to, pr)
 	} else {
+		// 考虑加入流量控制？
 		m.MsgType = pb.MessageType_MsgAppend
 		m.Index = pr.Next - 1
 		m.LogTerm = term
@@ -319,14 +314,13 @@ func (r *Raft) tickHeartbeat() {
 		return
 	}
 
-	// checkQuorum
+	// leader may get into a minor partition
 	if r.electionElapsed >= r.electionTimeout {
 		r.heartbeats[r.id] = true
 		if !r.QuorumActive() {
 			r.becomeFollower(r.Term, None)
 			return
 		}
-		// 重置
 		r.electionElapsed = 0
 		r.resetRandomizedElectionTimeout()
 		for k, _ := range r.heartbeats {
@@ -409,7 +403,7 @@ func (r *Raft) Step(m pb.Message) error {
 	case m.Term == 0:
 		// local message
 	case m.Term > r.Term:
-		// 收到高Term的msg，直接变成Follower
+		// 收到高Term的msg，直接变成Follower, 如果增加pre_vote机制该怎么修改呢？
 		log.Infof("%x [term: %d] received a %s message with higher term from %x [term: %d]",
 			r.id, r.Term, m.MsgType, m.From, m.Term)
 		if m.MsgType == pb.MessageType_MsgHeartbeat || m.MsgType == pb.MessageType_MsgAppend || m.MsgType == pb.MessageType_MsgSnapshot {
@@ -419,6 +413,7 @@ func (r *Raft) Step(m pb.Message) error {
 		}
 	case m.Term < r.Term:
 		// just ignore
+		// 如果加入pre_vote和checkQuorum机制，需要处理一些corner case
 		return nil
 	}
 
@@ -456,7 +451,7 @@ func (r *Raft) Step(m pb.Message) error {
 
 // leader状态机
 func stepLeader(r *Raft, m pb.Message) error {
-	// leader不需要处理MsgRequestVoteResponse，直接丢弃
+	// leader don't handle MsgRequestVoteResponse，just drop
 	switch m.MsgType {
 	case pb.MessageType_MsgPropose:
 		if len(m.Entries) == 0 {
@@ -492,19 +487,20 @@ func stepLeader(r *Raft, m pb.Message) error {
 		r.heartbeats[m.From] = true
 		preIndex := pr.Next - 1
 		if m.Reject {
-
 			log.Infof("%x received msgApp rejection(lastindex: %d) from %x for index %d",
 				r.id, m.Index, m.From, preIndex)
-			// index: 拒绝该AppendMsg节点的最大日志的索引
-			if pr.maybeDecrTo(preIndex, m.Index) { // 尝试回退关于该节点的Match、Next索引
+			// m.Index: for fast back off
+			if pr.maybeDecrTo(preIndex, m.Index) {
 				log.Infof("%x decreased progress of %x to [%s]", r.id, m.From, pr)
 				r.sendAppend(m.From)
 			}
-		} else { // 更新Follower的matchIndex，并尝试更新commitIndex
+		} else {
+			// update follower's matchIndex，nextIndex, also try to update leader's commitIndex
 			oricommitted := r.RaftLog.committed
 			if pr.maybeUpdate(m.Index) {
 				if r.maybecommit() {
-					r.bcastAppend() // 通知Follower更新了commitIndex
+					// notify followers to update commitIndex
+					r.bcastAppend()
 				}
 			}
 			log.Infof("%x received msgApp agreement(matchIndex: %d) from %x for index %d ,and update committed from %d to %d",
@@ -514,7 +510,6 @@ func stepLeader(r *Raft, m pb.Message) error {
 	return nil
 }
 
-// candidate状态机
 func stepCandidate(r *Raft, m pb.Message) error {
 	switch m.MsgType {
 	case pb.MessageType_MsgPropose:
@@ -549,7 +544,6 @@ func stepCandidate(r *Raft, m pb.Message) error {
 
 }
 
-// follower状态机
 func stepFollower(r *Raft, m pb.Message) error {
 	switch m.MsgType {
 	case pb.MessageType_MsgPropose:
@@ -583,7 +577,7 @@ func (r *Raft) campaign() {
 
 	r.becomeCandidate()
 	term := r.Term
-	//log.Infof("quorum %d", r.quorum())
+	// if the region only hase one peer, become leader
 	if r.quorum() == r.poll(r.id, voteMsg, true) {
 		r.becomeLeader()
 		return
@@ -613,7 +607,7 @@ func (r *Raft) send(m pb.Message) {
 			panic(fmt.Sprintf("term should be set when sending %s", m.MsgType))
 		}
 	} else {
-		// 其他的消息类型，term必须为空, 在这里才去填充
+		// 其他的消息类型，term一般在这去填充
 		m.Term = r.Term
 	}
 	r.msgs = append(r.msgs, m)
@@ -641,14 +635,14 @@ func (r *Raft) bcastAppend() {
 // handleAppendEntries handle AppendEntries RPC request
 func (r *Raft) handleAppendEntries(m pb.Message) {
 	// Your Code Here (2A).
-	// 用于日志匹配的条目在committed之前，说明这是一条过期的消息，因此直接返回MsgAppResp消息，并将消息的Index字段置为committed的值，以让leader快速更新该follower的next index。
+	// 用于日志匹配的条目在committed之前，说明这是一条过期的消息，
+	// 返回MsgAppResp消息，将消息的Index字段置为committed的值，让leader快速更新该follower的nextIndex, matchIndex
 	if m.Index < r.RaftLog.committed {
 		r.send(pb.Message{To: m.From, MsgType: pb.MessageType_MsgAppendResponse, Index: r.RaftLog.committed})
 		return
 	}
 
-	// 验证用于日志匹配的字段Term与Index是否与本地的日志匹配。如果匹配并保存了日志，则返回MsgAppResp消息，并将消息的Index字段置为本地最后一条日志的index，以让leader发送后续的日志。
-	//log.Infof("handle append entries: %v", m.Entries)
+	// 日志匹配。如果匹配并保存了日志，则返回MsgAppResp消息，并将消息的Index字段置为最后一条匹配的日志，让leader发送后续的日志。
 	if mlastIndex, ok := r.RaftLog.maybeAppend(m.Index, m.LogTerm, m.Commit, r.RaftLog.PToEnts(m.Entries)...); ok {
 		log.Infof("%x [Term: %d, matchIndex: %d] accepted msgApp [logterm: %d, index: %d] from %x",
 			r.id, r.Term, r.RaftLog.LastIndex(), m.LogTerm, m.Index, m.From)
@@ -836,7 +830,6 @@ func (r *Raft) restore(s *pb.Snapshot) bool {
 
 	// 纯粹应对TestRestoreSnapshot2C
 	if _, ok := r.RaftLog.storage.(*MemoryStorage); ok {
-		r.RaftLog.storage.(*MemoryStorage).ApplySnapshot(*s)
 		for _, p := range s.Metadata.ConfState.Nodes {
 			r.Prs[p] = &Progress{Next: r.RaftLog.LastIndex(), Match: 0}
 		}

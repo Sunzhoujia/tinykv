@@ -11,8 +11,7 @@ type Progress struct {
 	Match, Next uint64
 }
 
-// 收到appResp的成功应答之后，leader更新节点的索引数据
-// 如果传入的n小于等于当前的match索引，则索引就不会更新，返回false；否则更新索引返回true
+// leader update follower's nextIndex and matchIndex
 func (pr *Progress) maybeUpdate(n uint64) bool {
 	var updated bool
 	if pr.Match < n {
@@ -23,14 +22,16 @@ func (pr *Progress) maybeUpdate(n uint64) bool {
 	return updated
 }
 
-// 判断是否是过期消息，对过期消息直接返回false，不处理
+// 没有实现按term的快速回退，etcd的实现中说明这是没有必要的
 // rejected: MsgApp携带的preLogIndex
 // matchHint: follower最后一条日志索引
 func (pr *Progress) maybeDecrTo(rejectIndex, matchHint uint64) bool {
+	// 过期消息，返回false，不处理
 	if rejectIndex <= pr.Match {
 		return false
 	}
-
+	// 1. next = next-1
+	// 2. next = matchHint+1
 	pr.Next = max(min(rejectIndex, matchHint+1), 1)
 	return true
 }
