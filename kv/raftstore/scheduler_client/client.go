@@ -161,6 +161,7 @@ func (c *client) checkLeaderLoop() {
 func (c *client) updateLeader() (*schedulerpb.GetMembersResponse, error) {
 	for _, u := range c.urls {
 		ctx, cancel := context.WithTimeout(c.ctx, schedulerTimeout)
+		// 向 schedule 发送rpc请求，获取members
 		members, err := c.getMembers(ctx, u)
 		cancel()
 		if err != nil || members.GetLeader() == nil || len(members.GetLeader().GetClientUrls()) == 0 {

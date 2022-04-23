@@ -38,11 +38,14 @@ func NewNode(system *Raftstore, cfg *config.Config, schedulerClient scheduler_cl
 	}
 }
 
+// 和schedule申请storeID，regionID，在schedule上注册自己，然后正式启动raftstore节点
 func (n *Node) Start(ctx context.Context, engines *engine_util.Engines, trans Transport, snapMgr *snap.SnapManager) error {
 	storeID, err := n.checkStore(engines)
 	if err != nil {
 		return err
 	}
+	// 如果没有在kvDB里存过 [storeID, clusterID]，则存一份
+	// storeID的获取是由schedule client去和schedule拿
 	if storeID == util.InvalidID {
 		storeID, err = n.bootstrapStore(ctx, engines)
 	}
@@ -51,6 +54,7 @@ func (n *Node) Start(ctx context.Context, engines *engine_util.Engines, trans Tr
 	}
 	n.store.Id = storeID
 
+	// 获取region，如果没有就去schedule注册一个？
 	firstRegion, err := n.checkOrPrepareBootstrapCluster(ctx, engines, storeID)
 	if err != nil {
 		return err
@@ -58,12 +62,13 @@ func (n *Node) Start(ctx context.Context, engines *engine_util.Engines, trans Tr
 	newCluster := firstRegion != nil
 	if newCluster {
 		log.Infof("try bootstrap cluster, storeID: %d, region: %s", storeID, firstRegion)
+		// // 向schedule发送Bootstrap的请求，并对返回结果做一些错误检查
 		newCluster, err = n.BootstrapCluster(ctx, engines, firstRegion)
 		if err != nil {
 			return err
 		}
 	}
-	// 去schedulerClient上注册自己？
+	// 去scheduler上注册自己，后面需要定期向scheduler汇报自己的信息
 	err = n.schedulerClient.PutStore(ctx, n.store)
 	if err != nil {
 		return err
@@ -163,11 +168,13 @@ func (n *Node) BootstrapCluster(ctx context.Context, engines *engine_util.Engine
 			time.Sleep(time.Second)
 		}
 
+		// 向schedule发送Bootstrap的请求
 		res, err := n.schedulerClient.Bootstrap(ctx, n.store)
 		if err != nil {
 			log.Errorf("bootstrap cluster failed, clusterID: %d, err: %v", n.clusterID, err)
 			continue
 		}
+		// 对Bootstrap的resp做一些错误检查
 		resErr := res.GetHeader().GetError()
 		if resErr == nil {
 			log.Infof("bootstrap cluster ok, clusterID: %d", n.clusterID)

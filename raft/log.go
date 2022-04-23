@@ -409,13 +409,14 @@ func (l *RaftLog) snapshot() (pb.Snapshot, error) {
 	return l.storage.Snapshot()
 }
 
+// 可能把l.applied在这里更新并不优雅，应该在上层apply snapshot后再更新applyIndex。但这边不更新的话，上层调用ready时，[applyIndex, commitIndex]这段日志实际上被清空了。
 func (l *RaftLog) restore(s *pb.Snapshot) {
 	log.Infof("log [%s] starts to restore snapshot [index: %d, term: %d]", l, s.Metadata.Index, s.Metadata.Term)
 	l.committed = s.Metadata.Index
 	l.stabled = s.Metadata.Index
 	l.dummyIndex = s.Metadata.Index
 	l.pendingSnapshot = s
-	// 都把entries情况了，所以直接将l.applie置为snapIndex，否则上层在获取ready，调用nextentries会出错
+	// 把entries被清空，所以直接将l.applie置为snapIndex，否则上层在获取ready，调用nextentries会出错
 	l.applied = s.Metadata.Index
 	// 直接全部compact掉就行？
 	// 走到这一步说明snap的最后一条entry是和raftlog不匹配的，所以即使raftlog有在snapIdnex后面还有log，也会被leader给覆盖掉，所以直接丢弃就行

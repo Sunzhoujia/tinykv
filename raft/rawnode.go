@@ -220,6 +220,7 @@ func (rn *RawNode) commitReady(rd Ready) {
 		rn.Raft.RaftLog.appliedTo(rn.prevHardSt.Commit)
 	}
 
+	// updata stable index
 	if len(rd.Entries) > 0 {
 		e := rd.Entries[len(rd.Entries)-1]
 		rn.Raft.RaftLog.stableTo(e.Index, e.Term)
