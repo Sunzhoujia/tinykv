@@ -192,16 +192,12 @@ func newRaft(c *Config) *Raft {
 
 	// 应对2a测试，2a的peers是从config里拿的，2b是从storage拿的
 	peers := c.peers
-	if cs.Nodes != nil {
+	if len(cs.Nodes) > 0 {
 		peers = cs.Nodes
 	}
 	// 初始化对每个peer的nextIndex和matchIndex
 	for _, p := range peers {
 		r.Prs[p] = &Progress{Next: r.RaftLog.LastIndex(), Match: 0}
-	}
-
-	for _, p := range peers {
-		r.heartbeats[p] = false
 	}
 
 	// 判断是否第一次启动, 不是的话从hardState加载Term，Vote
@@ -310,10 +306,6 @@ func (r *Raft) tickHeartbeat() {
 	r.heartbeatElapsed++
 	r.electionElapsed++
 
-	if r.State != StateLeader {
-		return
-	}
-
 	// leader may get into a minor partition
 	if r.electionElapsed >= r.electionTimeout {
 		r.heartbeats[r.id] = true
@@ -327,6 +319,14 @@ func (r *Raft) tickHeartbeat() {
 			r.heartbeats[k] = false
 		}
 
+		if r.State == StateLeader && r.leadTransferee != None {
+			r.abortLeaderTransfer()
+		}
+	}
+
+	// if leader step down, just return
+	if r.State != StateLeader {
+		return
 	}
 
 	if r.heartbeatElapsed >= r.heartbeatTimeout {
@@ -389,6 +389,25 @@ func (r *Raft) becomeLeader() {
 	r.Lead = r.id
 	r.State = StateLeader
 
+	// when become leader, maintain a heartbeatsMap
+	for p, _ := range r.Prs {
+		r.heartbeats[p] = false
+	}
+
+	// 变成leader前，看一下还有没有未commit的ConfChange
+	ents, err := r.RaftLog.Entries(r.RaftLog.committed + 1)
+	if err != nil {
+		log.Panicf("unexpected error getting uncommitted entries (%v)", err)
+	}
+	nconf := numOfPendingConf(ents)
+	if len(nconf) > 1 {
+		panic("unexpected multiple uncommitted config entry")
+	}
+	if len(nconf) == 1 {
+		r.PendingConfIndex = nconf[0].Index
+	}
+
+	// add noop entry to commit last term entries
 	r.appendEntry(&pb.Entry{Data: nil})
 	log.Infof("%x became leader at term %d, l.entries %v", r.id, r.Term, r.RaftLog.entries)
 }
@@ -458,7 +477,32 @@ func stepLeader(r *Raft, m pb.Message) error {
 			log.Panicf("%x stepped empty MsgProp", r.id)
 		}
 
-		// TO-DO: add check for ConfChange and leadTransferee
+		// check if leader is in config
+		if _, ok := r.Prs[r.id]; !ok {
+			// if we are not currently a member of the range, drop any new proposals
+			return nil
+		}
+
+		// when propose a leadship transfer, leader must stop accept MsgPropose
+		if r.leadTransferee != None {
+			log.Infof("%x [term %d] transfer leadership to %x is in progress; dropping proposal", r.id, r.Term, r.leadTransferee)
+			return ErrProposalDropped
+		}
+
+		for i, e := range m.Entries {
+			if e.EntryType == pb.EntryType_EntryConfChange {
+				if r.PendingConfIndex > r.RaftLog.applied {
+					var cc pb.ConfChange
+					if err := cc.Unmarshal(e.Data); err != nil {
+						panic(err)
+					}
+					log.Infof("%x ignoring cong change %v at config %v", r.id, cc, r.Prs)
+					m.Entries[i] = &pb.Entry{EntryType: pb.EntryType_EntryNormal}
+				} else {
+					r.PendingConfIndex = r.RaftLog.LastIndex() + uint64(i) + 1
+				}
+			}
+		}
 
 		if !r.appendEntry(m.Entries...) { // etcd中会进行流控，遵循了etcd中的设计先判断能否添加，实则未实现流控
 			return ErrProposalDropped
@@ -470,6 +514,7 @@ func stepLeader(r *Raft, m pb.Message) error {
 		return nil
 	}
 
+	// All other message types require a progress for m.From (pr).
 	pr := r.Prs[m.From]
 	if pr == nil {
 		log.Infof("%x no progress available for %x", r.id, m.From)
@@ -505,6 +550,37 @@ func stepLeader(r *Raft, m pb.Message) error {
 			}
 			log.Infof("%x received msgApp agreement(matchIndex: %d) from %x for index %d ,and update committed from %d to %d",
 				r.id, m.Index, m.From, preIndex, oricommitted, r.RaftLog.committed)
+
+			if m.From == r.leadTransferee && pr.Match == r.RaftLog.LastIndex() {
+				log.Infof("%x sent MsgTimeoutNow to %x after received MsgAppResp", r.id, m.From)
+				r.sendTimeoutNow(m.From)
+			}
+		}
+	case pb.MessageType_MsgTransferLeader:
+		leadTransferee := m.From
+		lastLeadTransferee := r.leadTransferee
+		if lastLeadTransferee != None {
+			if lastLeadTransferee == leadTransferee {
+				log.Infof("%x [term %d] transfer leadership to %x is in progress, ignores request to same node %x",
+					r.id, r.Term, leadTransferee, leadTransferee)
+				return nil
+			}
+			r.abortLeaderTransfer()
+			log.Infof("%x [term %d] abort previous transferring leadership to %x", r.id, r.Term, lastLeadTransferee)
+		}
+		if leadTransferee == r.id {
+			log.Infof("%x is already leader, Ingored transferring leadership to self", r.id)
+			return nil
+		}
+		log.Infof("%x [term %d] starts to transfer leadership to %x", r.id, r.Term, leadTransferee)
+		// Transfer leadership should be finished in one electionTimeout, so reset r.electionElapsed.
+		r.electionElapsed = 0
+		r.leadTransferee = leadTransferee
+		if pr.Match == r.RaftLog.LastIndex() {
+			r.sendTimeoutNow(leadTransferee)
+			log.Infof("%x sends MsgTimeoutNow to %x immediately as %x already has up-to-date log", r.id, leadTransferee, leadTransferee)
+		} else {
+			r.sendAppend(leadTransferee)
 		}
 	}
 	return nil
@@ -539,9 +615,10 @@ func stepCandidate(r *Raft, m pb.Message) error {
 		// 收到快照消息，说明集群已经有leader，转换为follower
 		r.becomeFollower(m.Term, m.From)
 		r.handleSnapshot(m)
+	case pb.MessageType_MsgTimeoutNow:
+		log.Infof("%x [term %d state %v] ignored MsgTimeoutNow from %x", r.id, r.Term, r.State, m.From)
 	}
 	return nil
-
 }
 
 func stepFollower(r *Raft, m pb.Message) error {
@@ -564,6 +641,18 @@ func stepFollower(r *Raft, m pb.Message) error {
 		r.electionElapsed = 0
 		r.Lead = m.From
 		r.handleSnapshot(m)
+	case pb.MessageType_MsgTransferLeader:
+		//log.Infof("%x [term %d state %v] fail to handle MsgTransferLeader", r.id, r.Term, r.State)
+		if r.Lead == None {
+			log.Infof("%x no leader at term %d; dropping leader transfer msg", r.id, r.Term)
+			return nil
+		}
+		m.To = r.Lead
+		log.Infof("%x is follower, and resend transferMsg to %x", r.id, r.Lead)
+		r.send(m)
+	case pb.MessageType_MsgTimeoutNow:
+		log.Infof("%x [term %d] received MsgTimeoutNow from %x and starts an election to get leadership.", r.id, r.Term, m.From)
+		r.campaign()
 	}
 	return nil
 }
@@ -573,6 +662,12 @@ func (r *Raft) campaign() {
 		log.Infof("%x ignoring MsgHup because already leader", r.id)
 		return
 	}
+
+	if !r.promotable() {
+		log.Infof("%x is unpromotable and can not campaign", r.id)
+		return
+	}
+
 	voteMsg := pb.MessageType_MsgRequestVote
 
 	r.becomeCandidate()
@@ -684,11 +779,45 @@ func (r *Raft) handleSnapshot(m pb.Message) {
 // addNode add a new node to raft group
 func (r *Raft) addNode(id uint64) {
 	// Your Code Here (3A).
+	if _, ok := r.Prs[id]; ok {
+		return
+	}
+	r.setProgress(id, 0, r.RaftLog.LastIndex()+1)
 }
 
 // removeNode remove a node from raft group
 func (r *Raft) removeNode(id uint64) {
 	// Your Code Here (3A).
+	r.delProgress(id)
+
+	if len(r.Prs) == 0 {
+		return
+	}
+
+	// The quorum size is now smaller, so see if any pending entries can
+	// be committed.
+	if r.maybecommit() {
+		r.bcastAppend()
+	}
+
+	// If the removed node is the leadTransferee, then abort the leadership transferring.
+	if r.State == StateLeader && r.leadTransferee == id {
+		r.abortLeaderTransfer()
+	}
+}
+
+func (r *Raft) setProgress(id, match, next uint64) {
+	r.Prs[id] = &Progress{Next: next, Match: match}
+	if r.State == StateLeader {
+		r.heartbeats[id] = false
+	}
+}
+
+func (r *Raft) delProgress(id uint64) {
+	delete(r.Prs, id)
+	if r.State == StateLeader {
+		delete(r.heartbeats, id)
+	}
 }
 
 // maybeCommit attempts to advance the commit index. Returns true if
@@ -710,7 +839,11 @@ func (r *Raft) reset(term uint64) {
 	r.heartbeatElapsed = 0
 	r.resetRandomizedElectionTimeout()
 
+	r.abortLeaderTransfer()
+
 	r.votes = map[uint64]bool{}
+
+	r.PendingConfIndex = 0
 
 	// reset prs
 	for id := range r.Prs {
@@ -840,4 +973,27 @@ func (r *Raft) restore(s *pb.Snapshot) bool {
 	log.Infof("%x [commit: %d, lastindex: %d, lastterm: %d] restored snapshot [index: %d, term: %d]",
 		r.id, r.RaftLog.committed, r.RaftLog.LastIndex(), r.RaftLog.LastTerm(), s.Metadata.Index, s.Metadata.Term)
 	return true
+}
+
+func (r *Raft) abortLeaderTransfer() {
+	r.leadTransferee = None
+}
+
+func (r *Raft) sendTimeoutNow(to uint64) {
+	r.send(pb.Message{To: to, MsgType: pb.MessageType_MsgTimeoutNow})
+}
+
+func numOfPendingConf(ents []pb.Entry) []pb.Entry {
+	nconf := []pb.Entry{}
+	for i := range ents {
+		if ents[i].EntryType == pb.EntryType_EntryConfChange {
+			nconf = append(ents, ents[i])
+		}
+	}
+	return nconf
+}
+
+func (r *Raft) promotable() bool {
+	pr := r.Prs[r.id]
+	return pr != nil && !r.RaftLog.hasPendingSnapshot()
 }
