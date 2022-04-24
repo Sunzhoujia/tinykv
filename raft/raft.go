@@ -783,6 +783,11 @@ func (r *Raft) addNode(id uint64) {
 		return
 	}
 	r.setProgress(id, 0, r.RaftLog.LastIndex()+1)
+
+	// help new node to catch up leader's log
+	if r.State == StateLeader && r.id != id {
+		r.sendAppend(id)
+	}
 }
 
 // removeNode remove a node from raft group
@@ -791,6 +796,10 @@ func (r *Raft) removeNode(id uint64) {
 	r.delProgress(id)
 
 	if len(r.Prs) == 0 {
+		return
+	}
+
+	if r.State != StateLeader {
 		return
 	}
 
