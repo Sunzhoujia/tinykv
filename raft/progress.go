@@ -9,6 +9,9 @@ import (
 // progresses of all followers, and sends entries to the follower based on its progress.
 type Progress struct {
 	Match, Next uint64
+
+	// for checkQuorum
+	RecentActive bool
 }
 
 // leader update follower's nextIndex and matchIndex

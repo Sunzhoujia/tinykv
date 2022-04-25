@@ -132,7 +132,7 @@ type Raft struct {
 	Lead uint64
 
 	// check quorum
-	heartbeats map[uint64]bool
+	//heartbeats map[uint64]bool
 
 	// heartbeat interval, should send
 	heartbeatTimeout int
@@ -185,7 +185,7 @@ func newRaft(c *Config) *Raft {
 		Vote:    None,
 		Prs:     make(map[uint64]*Progress),
 		// leader维护活跃的follower，在electionTimeout时如果没有半数活跃Follower，就退位。类似于checkQuorum
-		heartbeats:       make(map[uint64]bool),
+		//heartbeats:       make(map[uint64]bool),
 		heartbeatTimeout: c.HeartbeatTick,
 		electionTimeout:  c.ElectionTick,
 	}
@@ -234,6 +234,10 @@ func (r *Raft) sendAppend(to uint64) bool {
 
 	// pr.Next has been compacted，leader needs to send snapshot
 	if errt != nil || erre != nil {
+		if !pr.RecentActive {
+			log.Infof("ignore sending snapshot to %x since it is not recently active", to)
+			return false
+		}
 		m.MsgType = pb.MessageType_MsgSnapshot
 		snapshot, err := r.RaftLog.snapshot()
 		if err != nil {
@@ -308,16 +312,20 @@ func (r *Raft) tickHeartbeat() {
 
 	// leader may get into a minor partition
 	if r.electionElapsed >= r.electionTimeout {
-		r.heartbeats[r.id] = true
-		if !r.QuorumActive() {
-			r.becomeFollower(r.Term, None)
-			return
-		}
+		// r.heartbeats[r.id] = true
+		// if !r.QuorumActive() {
+		// 	r.becomeFollower(r.Term, None)
+		// 	return
+		// }
 		r.electionElapsed = 0
-		r.resetRandomizedElectionTimeout()
-		for k, _ := range r.heartbeats {
-			r.heartbeats[k] = false
+
+		if err := r.Step(pb.Message{From: r.id, MsgType: pb.MessageType_MsgCheckQuorum}); err != nil {
+			log.Infof("error occurred during checking sending heartbeat: %v", err)
 		}
+		// r.resetRandomizedElectionTimeout()
+		// for k, _ := range r.heartbeats {
+		// 	r.heartbeats[k] = false
+		// }
 
 		if r.State == StateLeader && r.leadTransferee != None {
 			r.abortLeaderTransfer()
@@ -390,8 +398,8 @@ func (r *Raft) becomeLeader() {
 	r.State = StateLeader
 
 	// when become leader, maintain a heartbeatsMap
-	for p, _ := range r.Prs {
-		r.heartbeats[p] = false
+	for _, pr := range r.Prs {
+		pr.RecentActive = true
 	}
 
 	// 变成leader前，看一下还有没有未commit的ConfChange
@@ -512,6 +520,22 @@ func stepLeader(r *Raft, m pb.Message) error {
 	case pb.MessageType_MsgBeat:
 		r.bcastHeartbeat()
 		return nil
+	case pb.MessageType_MsgCheckQuorum:
+		if pr := r.Prs[r.id]; pr != nil {
+			pr.RecentActive = true
+		}
+		if !r.QuorumActive() {
+			log.Infof("%x stepped down to follower since quorum is not active", r.id)
+			r.becomeFollower(r.Term, None)
+		}
+
+		// Mark everyone (but ourselves) as inactive in preparation for the next
+		// CheckQuorum.
+		for id, pr := range r.Prs {
+			if id != r.id {
+				pr.RecentActive = false
+			}
+		}
 	}
 
 	// All other message types require a progress for m.From (pr).
@@ -523,13 +547,13 @@ func stepLeader(r *Raft, m pb.Message) error {
 
 	switch m.MsgType {
 	case pb.MessageType_MsgHeartbeatResponse:
-		r.heartbeats[m.From] = true
+		pr.RecentActive = true
 		if pr.Match < r.RaftLog.LastIndex() {
 			r.sendAppend(m.From)
 		}
 		return nil
 	case pb.MessageType_MsgAppendResponse:
-		r.heartbeats[m.From] = true
+		pr.RecentActive = true
 		preIndex := pr.Next - 1
 		if m.Reject {
 			log.Infof("%x received msgApp rejection(lastindex: %d) from %x for index %d",
@@ -817,16 +841,16 @@ func (r *Raft) removeNode(id uint64) {
 
 func (r *Raft) setProgress(id, match, next uint64) {
 	r.Prs[id] = &Progress{Next: next, Match: match}
-	if r.State == StateLeader {
-		r.heartbeats[id] = false
-	}
+	// if r.State == StateLeader {
+	// 	r.heartbeats[id] = false
+	// }
 }
 
 func (r *Raft) delProgress(id uint64) {
 	delete(r.Prs, id)
-	if r.State == StateLeader {
-		delete(r.heartbeats, id)
-	}
+	// if r.State == StateLeader {
+	// 	delete(r.heartbeats, id)
+	// }
 }
 
 // maybeCommit attempts to advance the commit index. Returns true if
@@ -940,8 +964,8 @@ func (r *Raft) hardState() pb.HardState {
 
 func (r *Raft) QuorumActive() bool {
 	alive := 0
-	for _, v := range r.heartbeats {
-		if v {
+	for _, pr := range r.Prs {
+		if pr.RecentActive {
 			alive++
 		}
 	}
