@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/message"
+	"github.com/pingcap-incubator/tinykv/log"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_cmdpb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_serverpb"
 
@@ -66,6 +67,7 @@ func (pr *router) send(regionID uint64, msg message.Msg) error {
 	msg.RegionID = regionID
 	p := pr.get(regionID)
 	if p == nil || atomic.LoadUint32(&p.closed) == 1 {
+		log.Infof("Router send raftMsg, but fail to find region %d", regionID)
 		return errPeerNotFound
 	}
 	pr.peerSender <- msg
@@ -92,12 +94,11 @@ func (r *RaftstoreRouter) Send(regionID uint64, msg message.Msg) error {
 
 func (r *RaftstoreRouter) SendRaftMessage(msg *raft_serverpb.RaftMessage) error {
 	regionID := msg.RegionId
-	// 发送raftMsg给store中的某个peer，如果peer不存在这个store，则需要发送MsgTypeStoreRaftMessage信息给schedule汇报。
+	// 发送raftMsg给store中的某个peer，如果peer不存在，则发送MsgTypeStoreRaftMessage信息给storeWorker创建peer
 	if r.router.send(regionID, message.NewPeerMsg(message.MsgTypeRaftMessage, regionID, msg)) != nil {
 		r.router.sendStore(message.NewPeerMsg(message.MsgTypeStoreRaftMessage, regionID, msg))
 	}
 	return nil
-
 }
 
 // router收到raftStorage传来的raftCmdREquest，进一步封装，先将raftCmdREquest和callback封装成MsgRaftCmd，然后在封装成统一的Msg（把region也封装进去）
