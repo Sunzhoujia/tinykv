@@ -236,6 +236,7 @@ func (sm *SnapManager) GetSnapshotForApplying(snapKey SnapKey) (Snapshot, error)
 	return snap, nil
 }
 
+// 在snapmgr上注册这次的snapshot，如果之前已经有过同类型的snapEntry注册，则忽略
 func (sm *SnapManager) Register(key SnapKey, entry SnapEntry) {
 	log.Debugf("register key:%s, entry:%d", key, entry)
 	sm.registryLock.Lock()

@@ -251,6 +251,13 @@ func (r *Raft) sendAppend(to uint64) bool {
 			log.Panicf("need non-empty snapshot")
 		}
 
+		// szjdebug
+		// snapData := new(rspb.RaftSnapshotData)
+		// if err := snapData.Unmarshal(snapshot.Data); err != nil {
+		// 	panic(err)
+		// }
+		// log.Infof("snapshot startKey %s, endkey %s", snapData.Region.StartKey, snapData.Region.EndKey)
+
 		m.Snapshot = &snapshot
 		sindex, sterm := snapshot.Metadata.Index, snapshot.Metadata.Index
 		log.Infof("%x [firstindex: %d, commit: %d] sent snapshot[index: %d, term: %d] to %x [%s]",
@@ -281,7 +288,7 @@ func (r *Raft) sendHeartbeat(to uint64) {
 		Commit:  commit,
 	}
 	log.Infof("%x [term: %d, commit: %d, LastIndex: %d] send hearbeat to %x [matchIndex: %d, nextIndex: %d] ",
-		r.id, r.Term, r.RaftLog.committed, r.RaftLog.LastIndex(), r.Prs[m.To].Match, r.Prs[m.To].Next, m.To)
+		r.id, r.Term, r.RaftLog.committed, r.RaftLog.LastIndex(), m.To, r.Prs[m.To].Match, r.Prs[m.To].Next)
 	r.send(m)
 }
 
@@ -397,7 +404,7 @@ func (r *Raft) becomeLeader() {
 	r.Lead = r.id
 	r.State = StateLeader
 
-	// when become leader, maintain a heartbeatsMap
+	// 主要为了通过测试 TestProvideSnap2C, 当选leader的时候不把所有节点设置为active，过不了这个测试。
 	for _, pr := range r.Prs {
 		pr.RecentActive = true
 	}
@@ -657,7 +664,7 @@ func stepFollower(r *Raft, m pb.Message) error {
 		r.Lead = m.From
 		r.handleHeartbeat(m)
 	case pb.MessageType_MsgAppend:
-		log.Infof("follower append entries %v at term %d", m.Entries, r.Term)
+		log.Infof("%x follower append entries %v at term %d", r.id, m.Entries, r.Term)
 		r.electionElapsed = 0
 		r.Lead = m.From
 		r.handleAppendEntries(m)
@@ -809,9 +816,9 @@ func (r *Raft) addNode(id uint64) {
 	r.setProgress(id, 0, r.RaftLog.LastIndex()+1)
 
 	// help new node to catch up leader's log
-	if r.State == StateLeader && r.id != id {
-		r.sendAppend(id)
-	}
+	// if r.State == StateLeader && r.id != id {
+	// 	r.sendAppend(id)
+	// }
 }
 
 // removeNode remove a node from raft group
@@ -841,16 +848,10 @@ func (r *Raft) removeNode(id uint64) {
 
 func (r *Raft) setProgress(id, match, next uint64) {
 	r.Prs[id] = &Progress{Next: next, Match: match}
-	// if r.State == StateLeader {
-	// 	r.heartbeats[id] = false
-	// }
 }
 
 func (r *Raft) delProgress(id uint64) {
 	delete(r.Prs, id)
-	// if r.State == StateLeader {
-	// 	delete(r.heartbeats, id)
-	// }
 }
 
 // maybeCommit attempts to advance the commit index. Returns true if

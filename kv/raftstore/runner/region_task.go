@@ -148,9 +148,11 @@ func getAppliedIdxTermForSnapshot(raft *badger.DB, kv *badger.Txn, regionId uint
 
 	idx := applyState.AppliedIndex
 	var term uint64
+	// 1. applyState.AppliedIndex == TruncatedState.Index, 说明从上次compact后没有log被apply
 	if idx == applyState.TruncatedState.Index {
 		term = applyState.TruncatedState.Term
 	} else {
+	// 2. compact后又有一些log被apply，所以要去kvdb拿entry
 		entry, err := meta.GetRaftEntry(raft, regionId, idx)
 		if err != nil {
 			return 0, 0, err
@@ -176,6 +178,7 @@ func doSnapshot(engines *engine_util.Engines, mgr *snap.SnapManager, regionId ui
 	defer mgr.Deregister(key, snap.SnapEntryGenerating)
 
 	regionState := new(rspb.RegionLocalState)
+	// 检查当前store的peer状态，不是normal不能做snapshot
 	err = engine_util.GetMetaFromTxn(txn, meta.RegionStateKey(regionId), regionState)
 	if err != nil {
 		panic(err)
@@ -193,6 +196,7 @@ func doSnapshot(engines *engine_util.Engines, mgr *snap.SnapManager, regionId ui
 			ConfState: &confState,
 		},
 	}
+	// 为新的snapshot创建snapshot文件
 	s, err := mgr.GetSnapshotForBuilding(key)
 	if err != nil {
 		return nil, err

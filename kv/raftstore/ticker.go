@@ -18,6 +18,7 @@ type tickSchedule struct {
 	interval int64 // 触发间隔
 }
 
+// 针对每个region的
 func newTicker(regionID uint64, cfg *config.Config) *ticker {
 	baseInterval := cfg.RaftBaseTickInterval
 	t := &ticker{
@@ -34,6 +35,7 @@ func newTicker(regionID uint64, cfg *config.Config) *ticker {
 
 const SnapMgrGcTickInterval = 1 * time.Minute
 
+// 针对整个store的
 func newStoreTicker(cfg *config.Config) *ticker {
 	baseInterval := cfg.RaftBaseTickInterval
 	t := &ticker{

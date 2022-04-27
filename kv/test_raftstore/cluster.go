@@ -184,8 +184,8 @@ func (c *Cluster) AllocPeer(storeID uint64) *metapb.Peer {
 }
 
 func (c *Cluster) Request(key []byte, reqs []*raft_cmdpb.Request, timeout time.Duration) (*raft_cmdpb.RaftCmdResponse, *badger.Txn) {
-	log.Infof("request again")
 	startTime := time.Now()
+	log.Infof("cluster send a request")
 	for i := 0; i < 10 || time.Now().Sub(startTime) < timeout; i++ {
 		region := c.GetRegion(key)
 		regionID := region.GetId()
@@ -225,7 +225,7 @@ func (c *Cluster) CallCommandOnLeader(request *raft_cmdpb.RaftCmdRequest, timeou
 	// 	log.Infof("peer %x CallCommandOnLeader Put [key %s, val %s]", leader.Id, string(key), string(val))
 	// }
 
-	// log.Infof("now leader %x", leader)
+	log.Infof("CallCommandOnLeader leader %x", leader.Id)
 	for {
 		if time.Now().Sub(startTime) > timeout {
 			return nil, nil
@@ -438,7 +438,9 @@ func (c *Cluster) MustTransferLeader(regionID uint64, leader *metapb.Peer) {
 }
 
 func (c *Cluster) MustAddPeer(regionID uint64, peer *metapb.Peer) {
+	log.Infof("start add [region %d, peerID %d, storeID %d]", regionID, peer.Id, peer.StoreId)
 	c.schedulerClient.AddPeer(regionID, peer)
+	log.Infof("end add [region %d, peerID %d, storeID %d]", regionID, peer.Id, peer.StoreId)
 	c.MustHavePeer(regionID, peer)
 }
 

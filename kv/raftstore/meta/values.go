@@ -3,6 +3,7 @@ package meta
 import (
 	"github.com/Connor1996/badger"
 	"github.com/pingcap-incubator/tinykv/kv/util/engine_util"
+	"github.com/pingcap-incubator/tinykv/log"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/metapb"
 	rspb "github.com/pingcap-incubator/tinykv/proto/pkg/raft_serverpb"
@@ -75,6 +76,7 @@ func InitApplyState(kvEngine *badger.DB, region *metapb.Region) (*rspb.RaftApply
 	if err != nil && err != badger.ErrKeyNotFound {
 		return nil, err
 	}
+
 	if err == badger.ErrKeyNotFound {
 		applyState = new(rspb.RaftApplyState)
 		applyState.TruncatedState = new(rspb.RaftTruncatedState)
@@ -88,6 +90,7 @@ func InitApplyState(kvEngine *badger.DB, region *metapb.Region) (*rspb.RaftApply
 			return applyState, err
 		}
 	}
+	log.Infof("Init applyState %v", applyState)
 	return applyState, nil
 }
 

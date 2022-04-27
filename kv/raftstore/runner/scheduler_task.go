@@ -61,10 +61,13 @@ func (r *SchedulerTaskHandler) Handle(t worker.Task) {
 	}
 }
 
+// 先向schedule client注册如何处理RegionHeartbeatResp
 func (r *SchedulerTaskHandler) Start() {
 	r.SchedulerClient.SetRegionHeartbeatResponseHandler(r.storeID, r.onRegionHeartbeatResponse)
 }
 
+// RegionHeartbeatResponseHandler
+// 处理changePeer，TransferLeader
 func (r *SchedulerTaskHandler) onRegionHeartbeatResponse(resp *schedulerpb.RegionHeartbeatResponse) {
 	if changePeer := resp.GetChangePeer(); changePeer != nil {
 		r.sendAdminRequest(resp.RegionId, resp.RegionEpoch, resp.TargetPeer, &raft_cmdpb.AdminRequest{
@@ -102,6 +105,7 @@ func (r *SchedulerTaskHandler) onAskSplit(t *SchedulerAskSplitTask) {
 	r.sendAdminRequest(t.Region.GetId(), t.Region.GetRegionEpoch(), t.Peer, aq, t.Callback)
 }
 
+// 向scheduler汇报region信息
 func (r *SchedulerTaskHandler) onHeartbeat(t *SchedulerRegionHeartbeatTask) {
 	var size int64
 	if t.ApproximateSize != nil {
@@ -111,7 +115,7 @@ func (r *SchedulerTaskHandler) onHeartbeat(t *SchedulerRegionHeartbeatTask) {
 	req := &schedulerpb.RegionHeartbeatRequest{
 		Region:          t.Region,
 		Leader:          t.Peer,
-		PendingPeers:    t.PendingPeers,
+		PendingPeers:    t.PendingPeers, // 掉线的peer
 		ApproximateSize: uint64(size),
 	}
 	r.SchedulerClient.RegionHeartbeat(req)

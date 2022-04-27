@@ -49,7 +49,7 @@ func createPeer(storeID uint64, cfg *config.Config, sched chan<- worker.Task,
 func replicatePeer(storeID uint64, cfg *config.Config, sched chan<- worker.Task,
 	engines *engine_util.Engines, regionID uint64, metaPeer *metapb.Peer) (*peer, error) {
 	// We will remove tombstone key when apply snapshot
-	log.Infof("[region %v] replicates peer with ID %d", regionID, metaPeer.GetId())
+	log.Infof("storeID %d [region %v] replicates peer with ID %d", storeID, regionID, metaPeer.GetId())
 	region := &metapb.Region{
 		Id:          regionID,
 		RegionEpoch: &metapb.RegionEpoch{},
@@ -93,13 +93,17 @@ type peer struct {
 	// Cache the peers information from other stores
 	// when sending raft messages to other peers, it's used to get the store id of target peer
 	// (Used in 3B conf change)
+	// 不缓存的话只能去storage里的region去拿peer信息
 	peerCache map[uint64]*metapb.Peer
 	// Record the instants of peers being added into the configuration.
 	// Remove them after they are not pending any more.
 	// (Used in 3B conf change)
+	// 当往conf里添加peer时，记录时间。
+	// 当他们追上leader进度后，再移除
 	PeersStartPendingTime map[uint64]time.Time
 	// Mark the peer as stopped, set when peer is destroyed
 	// (Used in 3B conf change)
+	// 当删除peer时，标记为stop
 	stopped bool
 
 	// An inaccurate difference in region size since last reset.
@@ -151,6 +155,7 @@ func NewPeer(storeId uint64, cfg *config.Config, engines *engine_util.Engines, r
 
 	// If this region has only one peer and I am the one, campaign directly.
 	if len(region.GetPeers()) == 1 && region.GetPeers()[0].GetStoreId() == storeId {
+		log.Infof("region %d: this region has only one peer and I am the one, campaign directly", p.regionId)
 		err = p.RaftGroup.Campaign()
 		if err != nil {
 			return nil, err
@@ -201,11 +206,12 @@ func (p *peer) MaybeDestroy() bool {
 func (p *peer) Destroy(engine *engine_util.Engines, keepData bool) error {
 	start := time.Now()
 	region := p.Region()
-	log.Infof("%v begin to destroy", p.Tag)
+	log.Infof("%v begin to destroy and lastIndex %d, applyIndex %d", p.Tag, p.RaftGroup.Raft.RaftLog.LastIndex(), p.peerStorage.applyState.AppliedIndex)
 
 	// Set Tombstone state explicitly
 	kvWB := new(engine_util.WriteBatch)
 	raftWB := new(engine_util.WriteBatch)
+	// 删除raftState，applyState，regionState，log entries
 	if err := p.peerStorage.clearMeta(kvWB, raftWB); err != nil {
 		return err
 	}
@@ -217,6 +223,11 @@ func (p *peer) Destroy(engine *engine_util.Engines, keepData bool) error {
 	if err := raftWB.WriteToDB(engine.Raft); err != nil {
 		return err
 	}
+
+	// 尝试读出来applyState
+	oldApplyState := new(rspb.RaftApplyState)
+	engine_util.GetMeta(engine.Kv, meta.ApplyStateKey(p.regionId), oldApplyState)
+	log.Infof("peer %x destory meta data, and try to read applyState %v", p.PeerId(), oldApplyState)
 
 	if p.peerStorage.isInitialized() && !keepData {
 		// If we meet panic when deleting data and raft log, the dirty data
@@ -284,13 +295,15 @@ func (p *peer) CollectPendingPeers() []*metapb.Peer {
 		if id == p.Meta.GetId() {
 			continue
 		}
+		// matchIndex < compaceIndex
 		if progress.Match < truncatedIdx {
+			// 如果peer还在conf里
 			if peer := p.getPeerFromCache(id); peer != nil {
 				pendingPeers = append(pendingPeers, peer)
 				if _, ok := p.PeersStartPendingTime[id]; !ok {
 					now := time.Now()
 					p.PeersStartPendingTime[id] = now
-					log.Debugf("%v peer %v start pending at %v", p.Tag, id, now)
+					log.Infof("%v peer %v start pending at %v", p.Tag, id, now)
 				}
 			}
 		}

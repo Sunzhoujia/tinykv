@@ -78,6 +78,7 @@ func (d *storeWorker) onTick(tick StoreTick) {
 
 func (d *storeWorker) handleMsg(msg message.Msg) {
 	switch msg.Type {
+	// 当peer不在该store时，router会给storeWorker发这么一条msg
 	case message.MsgTypeStoreRaftMessage:
 		if err := d.onRaftMessage(msg.Data.(*rspb.RaftMessage)); err != nil {
 			log.Errorf("handle raft message failed storeID %d, %v", d.id, err)
@@ -111,6 +112,7 @@ func (d *storeWorker) checkMsg(msg *rspb.RaftMessage) (bool, error) {
 	// Check if the target is tombstone,
 	stateKey := meta.RegionStateKey(regionID)
 	localState := new(rspb.RegionLocalState)
+	// 情况1：在engines找不到该peer的region信息，可能该peer是刚刚添加的，直接返回。
 	err := engine_util.GetMeta(d.ctx.engine.Kv, stateKey, localState)
 	if err != nil {
 		if err == badger.ErrKeyNotFound {
@@ -118,6 +120,10 @@ func (d *storeWorker) checkMsg(msg *rspb.RaftMessage) (bool, error) {
 		}
 		return false, err
 	}
+	log.Infof("store %x, region state %v", d.ctx.store.Id, localState)
+
+	// 情况2：在engines找到该peer的region信息，且peerState != Tombstone。先不考虑split的情况，出现这种情况是错误的
+	//        当把一个peer删除时，会将状态置为tombstone
 	if localState.State != rspb.PeerState_Tombstone {
 		// Maybe split, but not registered yet.
 		if util.IsFirstVoteMessage(msg.Message) {
@@ -133,13 +139,13 @@ func (d *storeWorker) checkMsg(msg *rspb.RaftMessage) (bool, error) {
 			log.Infof("region %d doesn't exist yet, wait for it to be split.", regionID)
 			return true, nil
 		}
-		return false, errors.Errorf("region %d not exists but not tombstone: %s", regionID, localState)
+		return false, errors.Errorf("region %d not exists but not tombstone %v: %s", regionID, localState.State, localState)
 	}
-	log.Debugf("region %d in tombstone state: %s", regionID, localState)
 	region := localState.Region
 	regionEpoch := region.RegionEpoch
-	// The region in this peer is already destroyed
+	// 情况3：这个peer已经被destory，状态被置为tombstone。这种peer，它的regionEpoch的confVer不可能和当前msg的一样大（删除peer会导致其他peer的confver+1），这种是错误的情况。
 	if util.IsEpochStale(fromEpoch, regionEpoch) {
+		// tombstone peer收到旧的信息，忽略即可
 		log.Infof("tombstone peer receives a stale message. region_id:%d, from_region_epoch:%s, current_region_epoch:%s, msg_type:%s",
 			regionID, fromEpoch, regionEpoch, msgType)
 		notExist := util.FindPeer(region, fromStoreID) == nil
@@ -155,19 +161,20 @@ func (d *storeWorker) checkMsg(msg *rspb.RaftMessage) (bool, error) {
 
 func (d *storeWorker) onRaftMessage(msg *rspb.RaftMessage) error {
 	regionID := msg.RegionId
+	// 再次校验store中是否有该peer
 	if err := d.ctx.router.send(regionID, message.Msg{Type: message.MsgTypeRaftMessage, Data: msg}); err == nil {
 		return nil
 	}
-	log.Debugf("handle raft message. from_peer:%d, to_peer:%d, store:%d, region:%d, msg:%+v",
+	log.Infof("handle raft message. from_peer:%d, to_peer:%d, store:%d, region:%d, msg:%+v",
 		msg.FromPeer.Id, msg.ToPeer.Id, d.storeState.id, regionID, msg.Message)
 	if msg.ToPeer.StoreId != d.ctx.store.Id {
-		log.Warnf("store not match, ignore it. store_id:%d, to_store_id:%d, region_id:%d",
+		log.Infof("store not match, ignore it. store_id:%d, to_store_id:%d, region_id:%d",
 			d.ctx.store.Id, msg.ToPeer.StoreId, regionID)
 		return nil
 	}
 
 	if msg.RegionEpoch == nil {
-		log.Errorf("missing region epoch in raft message, ignore it. region_id:%d", regionID)
+		log.Infof("missing region epoch in raft message, ignore it. region_id:%d", regionID)
 		return nil
 	}
 	if msg.IsTombstone {
@@ -181,6 +188,7 @@ func (d *storeWorker) onRaftMessage(msg *rspb.RaftMessage) error {
 	if ok {
 		return nil
 	}
+	// region对应的peer还没有在该store上创建。
 	created, err := d.maybeCreatePeer(regionID, msg)
 	if err != nil {
 		return err
@@ -202,11 +210,13 @@ func (d *storeWorker) maybeCreatePeer(regionID uint64, msg *rspb.RaftMessage) (b
 	meta := d.ctx.storeMeta
 	meta.Lock()
 	defer meta.Unlock()
+	// 再次尝试在StoreMeta里查找peer
 	if _, ok := meta.regions[regionID]; ok {
 		return true, nil
 	}
+	// 只有在raftMsg为心跳信息且commit==0，才会尝试创建peer（addNode时设置的term和match为0）
 	if !util.IsInitialMsg(msg.Message) {
-		log.Debugf("target peer %s doesn't exist", msg.ToPeer)
+		log.Infof("target peer %s doesn't exist", msg.ToPeer)
 		return false, nil
 	}
 
@@ -214,13 +224,14 @@ func (d *storeWorker) maybeCreatePeer(regionID uint64, msg *rspb.RaftMessage) (b
 		StartKey: msg.StartKey,
 		EndKey:   msg.EndKey,
 	}) {
-		log.Debugf("msg %s is overlapped with exist region %s", msg, region)
+		log.Infof("msg %s is overlapped with exist region %s", msg, region)
 		if util.IsFirstVoteMessage(msg.Message) {
 			meta.pendingVotes = append(meta.pendingVotes, msg)
 		}
 		return false, nil
 	}
 
+	// 创建peer，刚刚创建的peer的region信息是空的，只有一个regionID，需要leader发snapshot
 	peer, err := replicatePeer(
 		d.ctx.store.Id, d.ctx.cfg, d.ctx.regionTaskSender, d.ctx.engine, regionID, msg.ToPeer)
 	if err != nil {
@@ -228,6 +239,7 @@ func (d *storeWorker) maybeCreatePeer(regionID uint64, msg *rspb.RaftMessage) (b
 	}
 	// following snapshot may overlap, should insert into regionRanges after
 	// snapshot is applied.
+	// 将new peer的regionID注册到storeMeta的map表中，同时在router中也注册peer
 	meta.regions[regionID] = peer.Region()
 	d.ctx.router.register(peer)
 	_ = d.ctx.router.send(regionID, message.Msg{Type: message.MsgTypeStart})

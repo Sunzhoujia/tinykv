@@ -52,7 +52,8 @@ type PeerStorage struct {
 
 // NewPeerStorage get the persist raftState from engines and return a peer storage
 func NewPeerStorage(engines *engine_util.Engines, region *metapb.Region, regionSched chan<- worker.Task, tag string) (*PeerStorage, error) {
-	log.Debugf("%s creating storage for %s", tag, region.String())
+	log.Infof("%s creating storage for %s", tag, region.String())
+	// 如果是新启动的peer，往db里写raftstate，但都设置为0
 	raftState, err := meta.InitRaftLocalState(engines.Raft, region)
 	if err != nil {
 		return nil, err
@@ -198,6 +199,7 @@ func (ps *PeerStorage) Snapshot() (eraftpb.Snapshot, error) {
 		RegionId: ps.region.GetId(),
 		Notifier: ch,
 	}
+	//log.Infof("storage startKey %s, endKey %s", ps.region.StartKey, ps.region.EndKey)
 	return snapshot, raft.ErrSnapshotTemporarilyUnavailable
 }
 
@@ -353,16 +355,23 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 	// and send RegionTaskApply task to region worker through ps.regionSched, also remember call ps.clearMeta
 	// and ps.clearExtraData to delete stale data
 	// Your Code Here (2C).
+
+	// 删除旧数据, 必须要判断peer是否初始化了。因为刚刚添加的peer的region信息是没有初始化的，只有在applySnapshot后才初始化，
+	// 在一个新的 peer 被创建时，其 region 的 startKey，endKey 为空。如果你直接调用 ps.clearMeta 和ps.clearExtraData(),会把老的数据直接清空
+	if ps.isInitialized() {
+		// delete raftState, applyState, regionState and raft log entries
+		ps.clearMeta(kvWB, raftWB)
+		ps.clearExtraData(snapData.Region)
+	}
+
 	snapMete := snapshot.Metadata
 	if ps.applyState.AppliedIndex > snapMete.Index {
 		log.Panicf("unexpected situation")
 	}
 	ps.applyState.AppliedIndex = snapMete.Index
 	ps.applyState.TruncatedState = &rspb.RaftTruncatedState{Index: snapMete.Index, Term: snapMete.Term}
-
-	if ps.raftState.LastIndex < snapMete.Index {
-		ps.raftState.LastIndex, ps.raftState.LastTerm = snapMete.Index, snapMete.Term
-	}
+	ps.raftState.LastIndex, ps.raftState.LastTerm = snapMete.Index, snapMete.Term
+	kvWB.SetMeta(meta.ApplyStateKey(ps.region.Id), ps.applyState)
 
 	notify := make(chan bool, 1)
 	ps.regionSched <- &runner.RegionTaskApply{
@@ -372,25 +381,11 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 		StartKey: snapData.Region.StartKey,
 		EndKey:   snapData.Region.EndKey,
 	}
-	// 阻塞等待snapshot的apply
 	<-notify
 
-	// 删除旧数据
-	if ps.isInitialized() {
-		// delete raftState, applyState, regionState and raft log entries
-		ps.clearMeta(kvWB, raftWB)
-		// // Delete all data that is not covered by `new_region`.
-		ps.clearExtraData(snapData.Region)
-	}
-
-	ps.region = snapData.Region
-
-	raftWB.SetMeta(meta.RaftStateKey(ps.region.Id), ps.raftState)
-	kvWB.SetMeta(meta.ApplyStateKey(ps.region.Id), ps.applyState)
-	kvWB.SetMeta(meta.RegionStateKey(ps.region.Id), &rspb.RegionLocalState{
-		State:  rspb.PeerState_Normal,
-		Region: ps.region,
-	})
+	// ps.region = snapData.Region
+	// log.Infof("after apply snapshot, region %s, startKey %s, endKey %s", ps.region, ps.region.StartKey, ps.region.EndKey)
+	meta.WriteRegionState(kvWB, snapData.Region, rspb.PeerState_Normal)
 	return &ApplySnapResult{PrevRegion: ps.region, Region: snapData.Region}, nil
 }
 
@@ -404,16 +399,17 @@ func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, erro
 	// Your Code Here (2B/2C).
 	// raftLocalState和entries要原子写入
 	raftWB := new(engine_util.WriteBatch)
-	kvWB := new(engine_util.WriteBatch)
 	var applyResult *ApplySnapResult
 
 	// 处理pendingSnapshot
+	var err error
 	if !raft.IsEmptySnap(&ready.Snapshot) {
-		var err error
+		kvWB := new(engine_util.WriteBatch)
 		applyResult, err = ps.ApplySnapshot(&ready.Snapshot, kvWB, raftWB)
 		if err != nil {
 			log.Infof("Fail to apply snapshot, %v", err)
 		}
+		kvWB.WriteToDB(ps.Engines.Kv)
 	}
 
 	if len(ready.Entries) > 0 {
@@ -421,20 +417,13 @@ func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, erro
 		lastEntry := ready.Entries[len(ready.Entries)-1]
 		ps.raftState.LastIndex = lastEntry.Index
 		ps.raftState.LastTerm = lastEntry.Term
+
 	}
 	if !raft.IsEmptyHardState(ready.HardState) {
 		ps.raftState.HardState = &ready.HardState
 	}
 	raftWB.SetMeta(meta.RaftStateKey(ps.region.Id), ps.raftState)
-
-	// 最后将entries，raftState，applyState，regionState一起落盘
-	if err := ps.Engines.WriteKV(kvWB); err != nil {
-		log.Panicf("write kvDB Error : %v", err)
-	}
-	if err := ps.Engines.WriteRaft(raftWB); err != nil {
-		log.Panicf("write raftDB Error : %v", err)
-	}
-
+	raftWB.WriteToDB(ps.Engines.Raft)
 	return applyResult, nil
 }
 

@@ -139,13 +139,17 @@ func confchanger(t *testing.T, cluster *Cluster, ch chan bool, done *int32) {
 	defer func() { ch <- true }()
 	count := uint64(cluster.count)
 	for atomic.LoadInt32(done) == 0 {
-		region := cluster.GetRandomRegion()
-		store := rand.Uint64()%count + 1
+		region := cluster.GetRandomRegion() // 随机找一个 region
+		store := rand.Uint64()%count + 1    // 找一个store
+		// store里有该region就移除
 		if p := FindPeer(region, store); p != nil {
 			if len(region.GetPeers()) > 1 {
+				log.Infof("start remove [region %d, peerID %d, storeID %d]", region.GetId(), p.Id, p.StoreId)
 				cluster.MustRemovePeer(region.GetId(), p)
+				log.Infof("end remove [region %d, peerID %d, storeID %d]", region.GetId(), p.Id, p.StoreId)
 			}
 		} else {
+			// 没有则添加
 			cluster.MustAddPeer(region.GetId(), cluster.AllocPeer(store))
 		}
 		time.Sleep(time.Duration(rand.Int63()%200) * time.Millisecond)
@@ -589,6 +593,7 @@ func TestBasicConfChange3B(t *testing.T) {
 
 	// add peer (2, 2) to region 1
 	cluster.MustAddPeer(1, NewPeer(2, 2))
+
 	cluster.MustPut([]byte("k2"), []byte("v2"))
 	cluster.MustGet([]byte("k2"), []byte("v2"))
 	MustGetEqual(cluster.engines[2], []byte("k1"), []byte("v1"))
@@ -603,7 +608,6 @@ func TestBasicConfChange3B(t *testing.T) {
 	// add peer (3, 3) to region 1
 	cluster.MustAddPeer(1, NewPeer(3, 3))
 	cluster.MustRemovePeer(1, NewPeer(2, 2))
-
 	cluster.MustPut([]byte("k3"), []byte("v3"))
 	cluster.MustGet([]byte("k3"), []byte("v3"))
 	MustGetEqual(cluster.engines[3], []byte("k1"), []byte("v1"))
@@ -635,7 +639,8 @@ func TestBasicConfChange3B(t *testing.T) {
 
 func TestConfChangeRecover3B(t *testing.T) {
 	// Test: restarts, snapshots, conf change, one client (3B) ...
-	GenericTest(t, "3B", 1, false, true, false, -1, true, false)
+	//GenericTest(t, "3B", 1, false, true, false, -1, true, false)
+	GenericTest(t, "3B", 1, false, false, false, -1, true, false)
 }
 
 func TestConfChangeRecoverManyClients3B(t *testing.T) {

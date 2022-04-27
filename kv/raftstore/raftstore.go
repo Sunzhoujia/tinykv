@@ -256,9 +256,9 @@ func (bs *Raftstore) start(
 		schedulerClient:      schedulerClient,
 		tickDriverSender:     bs.tickDriver.newRegionCh,
 	}
-	// 加载peer，没有就新建
 	// 这里的region peer是这个store上的所有region的peer（一个region对应一个peer）
 	regionPeers, err := bs.loadPeers()
+	log.Infof("all load peers %v", regionPeers)
 	if err != nil {
 		return err
 	}
@@ -308,9 +308,7 @@ func (bs *Raftstore) startWorkers(peers []*peer) {
 
 func (bs *Raftstore) shutDown() {
 	close(bs.closeCh) // 关闭raftWorker和storeWorker
-	log.Infof("wait raft workers")
 	bs.wg.Wait()
-	log.Infof("stop raft workers")
 	bs.tickDriver.stop()
 	if bs.workers == nil {
 		return
@@ -322,7 +320,7 @@ func (bs *Raftstore) shutDown() {
 	workers.raftLogGCWorker.Stop()
 	workers.schedulerWorker.Stop()
 	workers.wg.Wait()
-	log.Infof("stop all workers")
+	log.Infof("store %x stop all workers", bs.storeState.id)
 }
 
 // 创建router，raftstore，tickdriver

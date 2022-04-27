@@ -114,6 +114,7 @@ func (t *MockTransport) Send(msg *raft_serverpb.RaftMessage) error {
 		fromSnapMgr.Deregister(key, snap.SnapEntrySending)
 	}
 
+	// transport有一个有一个路由表，找到toStore对应的router，调用SendRaftMessage方法
 	router, found := t.routers[toStore]
 	if !found {
 		return errors.New(fmt.Sprintf("store %d is closed", toStore))

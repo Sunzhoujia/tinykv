@@ -247,6 +247,7 @@ func (m *MockSchedulerClient) StoreHeartbeat(ctx context.Context, stats *schedul
 	return nil
 }
 
+// mockScheduler处理HeartbeatRequest，然后生成回复，最终调用发出请求的store的处理函数来处理回复。
 func (m *MockSchedulerClient) RegionHeartbeat(req *schedulerpb.RegionHeartbeatRequest) error {
 	if err := m.checkBootstrap(); err != nil {
 		return err
@@ -255,6 +256,7 @@ func (m *MockSchedulerClient) RegionHeartbeat(req *schedulerpb.RegionHeartbeatRe
 	m.Lock()
 	defer m.Unlock()
 
+	// 收到heartBeart请求后，根据pendingPeers来重置这个store的pendingPeers，重置该region的leader
 	regionID := req.Region.GetId()
 	for _, p := range req.Region.GetPeers() {
 		delete(m.pendingPeers, p.GetId())
@@ -271,21 +273,26 @@ func (m *MockSchedulerClient) RegionHeartbeat(req *schedulerpb.RegionHeartbeatRe
 		return err
 	}
 
+	// 向regionLeader发送回复。
 	resp := &schedulerpb.RegionHeartbeatResponse{
 		Header:      &schedulerpb.ResponseHeader{ClusterId: m.clusterID},
 		RegionId:    regionID,
 		RegionEpoch: req.Region.GetRegionEpoch(),
 		TargetPeer:  req.Leader,
 	}
+	// 检查scheduler的operators表中有没有这个region对应的调度
 	if op := m.operators[regionID]; op != nil {
+		// 检查这个op是否已经做完了
 		if m.tryFinished(op, req.Region, req.Leader) {
 			delete(m.operators, regionID)
 		} else {
+			// 操作没做完，则放进response，通知store去做
 			m.makeRegionHeartbeatResponse(op, resp)
 		}
 		log.Debugf("[region %d] schedule %v", regionID, op)
 	}
 
+	// 找到对应的store（现实中应该是发rpc给store，这里是为了模拟测试）
 	store := m.stores[req.Leader.GetStoreId()]
 	store.heartbeatResponseHandler(resp)
 	return nil
