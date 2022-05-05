@@ -279,7 +279,46 @@ func (c *RaftCluster) handleStoreHeartbeat(stats *schedulerpb.StoreStats) error 
 // processRegionHeartbeat updates the region information.
 func (c *RaftCluster) processRegionHeartbeat(region *core.RegionInfo) error {
 	// Your Code Here (3C).
-
+	originRegion := c.GetRegion(region.GetID())
+	newEpoch := region.GetRegionEpoch()
+	if newEpoch == nil {
+		return errors.Errorf("region has no epoch")
+	}
+	update := false
+	// case 1:
+	if originRegion == nil {
+		regions := c.ScanRegions(region.GetMeta().StartKey, region.GetEndKey(), 0)
+		for _, r := range regions {
+			oldEpoch := r.GetRegionEpoch()
+			if newEpoch.ConfVer < oldEpoch.ConfVer || newEpoch.Version < oldEpoch.Version {
+				// stale heartBeat
+				return errors.Errorf("stale heartBeat")
+			}
+		}
+		update = true
+	} else { // case 2:
+		oldEpoch := originRegion.GetRegionEpoch()
+		if newEpoch.ConfVer < oldEpoch.ConfVer || newEpoch.Version < oldEpoch.Version {
+			// stale heartBeat
+			return errors.Errorf("stale heartBeat")
+		}
+		if newEpoch.ConfVer > oldEpoch.ConfVer ||
+			newEpoch.Version > oldEpoch.Version ||
+			region.GetLeader() != originRegion.GetLeader() ||
+			len(region.GetPendingPeers()) > 0 ||
+			len(originRegion.GetPendingPeers()) > 0 ||
+			region.GetApproximateSize() != originRegion.GetApproximateSize() {
+			update = true
+		}
+	}
+	// check if we need to update region
+	if update {
+		c.putRegion(region)
+		for id := range region.GetStoreIds() {
+			c.updateStoreStatusLocked(id)
+		}
+	}
+	return nil
 	return nil
 }
 
